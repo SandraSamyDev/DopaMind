@@ -1,4 +1,5 @@
 import 'package:dopamind/models/onboarding_model.dart';
+import 'package:dopamind/screens/login_screen.dart';
 import 'package:dopamind/widgets/onboarding_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController controller = PageController();
   int currentIndex = 0;
 
+  
+  void goToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPage()),
+    );
+  }
+
   void nextPage() {
     if (currentIndex < onboardingData.length - 1) {
       controller.nextPage(
@@ -20,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      debugPrint("Go to Home");
+      goToLogin();
     }
   }
 
@@ -44,8 +53,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       color: Color(0xFF3B5571),
                     ),
                   ),
+
                   TextButton(
-                    onPressed: () {},
+                    onPressed: goToLogin,
                     child: const Text(
                       "Skip",
                       style: TextStyle(color: Color(0xFF3B5571)),
@@ -81,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 8,
                   decoration: BoxDecoration(
                     color: currentIndex == index
-                        ? Color(0xFF3B5571)
+                        ? const Color(0xFF3B5571)
                         : Colors.grey.shade400,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -96,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: ElevatedButton(
                 onPressed: nextPage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF3B5571),
+                  backgroundColor: const Color(0xFF3B5571),
                   minimumSize: const Size(double.infinity, 55),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
