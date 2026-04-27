@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(color: Color(0xFFF5F5F5)),
+        color: const Color(0xFFF5F5F5),
 
         child: Column(
           children: [
@@ -50,15 +50,29 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Center(
-                      child: Image.asset(
-                        "lib/assets/images/logo.jpeg",
-                        width: 200,
-                        height: 200,
+                    
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.40,
+                      height: MediaQuery.of(context).size.width * 0.40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .10),
+                            blurRadius: 25,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'lib/assets/images/logo2.jpeg',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
 
                     const Text(
                       "DopaMind",
@@ -89,6 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // PROGRESS BAR
                   Stack(
                     children: [
                       Container(
