@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "616774633841",
+    "project_id": "dopamind-f3cca",
+    "storage_bucket": "dopamind-f3cca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616774633841:android:1c010fceca9ee567ff0ed0",
+        "android_client_info": {
+          "package_name": "com.example.dopamind"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "616774633841-0c8m05etdnpvog7jevdu3c1i4782s4jo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dopamind",
+            "certificate_hash": "625a85345a81570e6e5dce2b61d14a249a49cf92"
+          }
+        },
+        {
+          "client_id": "616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnMTPH7Lr6kT6yc5LQGj8nuSI99a5Rggg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

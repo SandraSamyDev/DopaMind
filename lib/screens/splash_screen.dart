@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:dopamind/auth/auth_gate.dart';
+import 'package:dopamind/auth/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,14 +22,28 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> navigate() async {
     await Future.delayed(const Duration(seconds: 3));
-
-    final prefs = await SharedPreferences.getInstance();
-    bool seenOnboarding = prefs.getBool("seenOnboarding") ?? false;
+    final AuthService authService = AuthService();
+    final User? currentUser = authService.currentUser;
 
     if (!mounted) return;
 
+    if (currentUser != null) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+    );
+    return;
+  }
+
+    final prefs = await SharedPreferences.getInstance();
+    bool seenOnboarding = prefs.getBool("seenOnboarding") ?? false;
+    if (!mounted) return;
+
     if (seenOnboarding) {
-      Navigator.pushReplacementNamed(context, "/home");
+        Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthGate()),
+      );
     } else {
       Navigator.pushReplacement(
         context,

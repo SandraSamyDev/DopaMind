@@ -1,30 +1,21 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:dopamind/main.dart';
+import 'package:dopamind/widgets/gradient_button.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('DopaMind Authentication UI Smoke Test', (WidgetTester tester) async {
+    // 1. Build our real DopaMind application frame layer
+    await tester.pumpWidget(const DopaMindApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 2. Allow any background routing or splash animations to complete
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 3. Verify that the welcome text assets are found on screen
+    // Note: Change 'Welcome Back' to 'Create Account' if your app boots to SignUp first
+    expect(find.text('Welcome Back'), findsOneWidget);
+    
+    // 4. Verify that your custom action buttons are properly rendered
+    expect(find.byType(GradientButton), findsOneWidget);
   });
 }
