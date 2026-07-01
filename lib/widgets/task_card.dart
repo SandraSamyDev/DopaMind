@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 
 class TaskCard extends StatelessWidget {
-  final Task task;
+  final TaskModel task; // FIX: Updated from Task to TaskModel
   final VoidCallback onTap;
 
   const TaskCard({super.key, required this.task, required this.onTap});
 
   Color getPriorityColor() {
-    switch (task.priority) {
+    switch (task.priority.toUpperCase()) {
       case "HIGH":
         return Colors.red.shade200;
       case "MEDIUM":
@@ -23,6 +23,10 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamically calculate steps from your subtasks list
+    final int totalSteps = task.subtasks.length;
+    final int completedSteps = task.subtasks.where((sub) => sub['isDone'] == true).length;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -35,37 +39,42 @@ class TaskCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Checkbox Indicator
             CircleAvatar(
               radius: 12,
-              backgroundColor: task.isDone
+              backgroundColor: task.isCompleted // FIX: changed to isCompleted
                   ? AppColors.primary
-                  : Colors.transparent,
-              child: task.isDone
+                  : Colors.grey.shade300,
+              child: task.isCompleted
                   ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
+                  : CircleAvatar(radius: 10, backgroundColor: Colors.white),
             ),
 
             const SizedBox(width: 12),
 
+            // Task Info Info Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     task.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  task.isDone
+                  task.isCompleted
                       ? Text(
-                          "Completed at ${task.time}",
+                          "Mode: ${task.focusMode}", // Displaying focus style on completion
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
                           ),
                         )
                       : Text(
-                          "${task.completedSteps}/${task.totalSteps} steps completed",
+                          "$completedSteps/$totalSteps steps completed", // Computed dynamically!
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
@@ -74,16 +83,20 @@ class TaskCard extends StatelessWidget {
                 ],
               ),
             ),
-
+            // Priority Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: getPriorityColor(),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(task.priority, style: const TextStyle(fontSize: 10)),
+              child: Text(
+                task.priority,
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
             ),
 
+            // Context Menu Button
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'details') {
@@ -92,7 +105,10 @@ class TaskCard extends StatelessWidget {
                     builder: (_) => AlertDialog(
                       title: Text(task.title),
                       content: Text(
-                        "Steps: ${task.completedSteps}/${task.totalSteps}\nPriority: ${task.priority}",
+                        "Description: ${task.description}\n\n"
+                        "Steps: $completedSteps/$totalSteps\n"
+                        "Priority: ${task.priority}\n"
+                        "Focus Mode: ${task.focusMode}",
                       ),
                     ),
                   );

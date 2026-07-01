@@ -1,4 +1,5 @@
-import 'package:dopamind/screens/home_screen.dart';
+import 'package:dopamind/auth/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../widgets/auth_scaffold.dart';
 import '../widgets/app_text_field.dart';
@@ -7,8 +8,52 @@ import '../core/app_colors.dart';
 import 'forgot_password.dart';
 import 'signup_screen.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+@override
+  void dispose (){
+_emailController.dispose();
+_passwordController.dispose();
+super.dispose();
+
+  }
+
+  void login(email,password) async {
+    try {
+      await _authService.signIn(email: email, password: password);
+           } on FirebaseAuthException catch (e) {
+            if (!mounted) return null;
+            ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString())));
+      
+    }
+
+    
+
+  }
+  void loginWithGoogle() async {
+    try {
+      await _authService.signInWithGoogle();
+           } on FirebaseAuthException catch (e) {
+            if (!mounted) return null;
+            ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString())));
+      
+    }
+
+    
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +64,6 @@ class LoginPage extends StatelessWidget {
           children: [
             const SizedBox(height: 30),
 
-            
             Container(
               width: 110,
               height: 110,
@@ -43,7 +87,6 @@ class LoginPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            
             const Text(
               "Welcome Back",
               style: TextStyle(
@@ -55,7 +98,6 @@ class LoginPage extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: Container(
@@ -66,7 +108,8 @@ class LoginPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const AppTextField(
+                    AppTextField(
+                      controller: _emailController,
                       label: "Email",
                       hint: "Enter your email",
                       icon: Icons.email_outlined,
@@ -74,7 +117,8 @@ class LoginPage extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    const AppTextField(
+                    AppTextField(
+                      controller: _passwordController,
                       label: "Password",
                       hint: "Enter your password",
                       icon: Icons.lock_outline,
@@ -104,12 +148,12 @@ class LoginPage extends StatelessWidget {
 
                     const SizedBox(height: 10),
 
-                    GradientButton(text: "Login", onPressed: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) =>  HomeScreen()),
-                    );
-                    }),
+                    GradientButton(
+                      text: "Login",
+                      onPressed: () {
+                        login(_emailController.text.trim(), _passwordController.text.trim());
+                      },
+                    ),
 
                     const SizedBox(height: 20),
 
@@ -127,7 +171,15 @@ class LoginPage extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+try {
+   _authService.signInWithGoogle();  
+} catch (e) {
+  if(!mounted) return;
+
+}
+                     
+                      },
                       icon: Image.asset(
                         "lib/assets/images/google.png",
                         height: 22,
@@ -160,7 +212,7 @@ class LoginPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const SignUpPage()),
+                      MaterialPageRoute(builder: (_) => SignUpPage()),
                     );
                   },
                   child: const Text(
@@ -181,4 +233,3 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
-

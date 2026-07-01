@@ -77,7 +77,7 @@ class ForgotPasswordPage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  MaterialPageRoute(builder: (_) =>  LoginPage()),
                 );
               },
               child: const Text(
