@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 
 class GradientButton extends StatelessWidget {
+  
   final String text;
   final VoidCallback onPressed;
 

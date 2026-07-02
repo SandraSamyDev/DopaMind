@@ -11,11 +11,16 @@ enum TaskCategory {
   final IconData icon;
   final Color color;
 
-  const TaskCategory({required this.name, required this.icon, required this.color});
+  const TaskCategory({
+    required this.name,
+    required this.icon,
+    required this.color,
+  });
 }
 
 // Inside your model file:
-class TaskModel {  // Change this from TaskModel to Task
+class TaskModel {
+  // Change this from TaskModel to Task
   String title;
   String description;
   String priority;
@@ -23,11 +28,12 @@ class TaskModel {  // Change this from TaskModel to Task
   DateTime dueDate;
   TimeOfDay reminder;
   List<Map<String, dynamic>> subtasks;
-  
+
   final String id;
   int durationMinutes;
   List<String> blockedAppsPackages;
   bool isCompleted;
+  DateTime? completedAt;
 
   TaskModel({
     required this.title,
@@ -41,5 +47,46 @@ class TaskModel {  // Change this from TaskModel to Task
     required this.durationMinutes,
     required this.blockedAppsPackages,
     this.isCompleted = false,
+    this.completedAt,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'priority': priority,
+      'focusMode': focusMode,
+      'dueDate': dueDate.toIso8601String(),
+      'reminderHour': reminder.hour,
+      'reminderMinute': reminder.minute,
+      'subtasks': subtasks,
+      'durationMinutes': durationMinutes,
+      'blockedAppsPackages': blockedAppsPackages,
+      'isCompleted': isCompleted,
+      'completedAt': completedAt?.toIso8601String(),
+    };
+  }
+
+  factory TaskModel.fromMap(Map<String, dynamic> map) {
+    return TaskModel(
+      id: map['id'],
+      title: map['title'],
+      description: map['description'],
+      priority: map['priority'],
+      focusMode: map['focusMode'],
+      dueDate: DateTime.parse(map['dueDate']),
+      reminder: TimeOfDay(
+        hour: map['reminderHour'],
+        minute: map['reminderMinute'],
+      ),
+      subtasks: List<Map<String, dynamic>>.from(map['subtasks']),
+      durationMinutes: map['durationMinutes'],
+      blockedAppsPackages: List<String>.from(map['blockedAppsPackages']),
+      isCompleted: map['isCompleted'],
+      completedAt: map['completedAt'] != null
+    ? DateTime.parse(map['completedAt'])
+    : null,
+    );
+  }
 }

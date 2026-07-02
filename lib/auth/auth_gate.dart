@@ -24,7 +24,7 @@ static final AuthService _authService = AuthService();
         if (snapshot.hasData && snapshot.data != null) {
           final user = snapshot.data!;
           if (user.emailVerified) {
-            return const Logout();
+            return const HomeScreen();
           } else {
             return const EmailVerification(); 
           }

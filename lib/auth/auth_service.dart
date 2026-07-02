@@ -2,12 +2,13 @@ import 'package:dopamind/auth/auth_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   User? get currentUser => firebaseAuth.currentUser;
 
-Stream<User?> get authchanges => firebaseAuth.userChanges();
+  Stream<User?> get authchanges => firebaseAuth.userChanges();
   Future<UserCredential> signIn({
     required String email,
     required String password,
@@ -18,25 +19,25 @@ Stream<User?> get authchanges => firebaseAuth.userChanges();
     );
   }
 
-Future<UserCredential?> signInWithGoogle() async {
+  Future<UserCredential?> signInWithGoogle() async {
     try {
       // 1. Correct modern initialization format
       await GoogleSignIn.instance.initialize(
-        serverClientId: '616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com',
+        serverClientId:
+            '616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com',
       );
 
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+          .authenticate();
 
       if (googleUser == null) {
-        return null; 
+        return null;
       }
 
       await Future.delayed(Duration.zero);
 
-     
-      final GoogleSignInAuthentication googleAuth =  googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-      
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
@@ -48,7 +49,7 @@ Future<UserCredential?> signInWithGoogle() async {
     }
   }
 
-Future<void> signOut() async {
+  Future<void> signOut() async {
     try {
       await firebaseAuth.signOut();
       await GoogleSignIn.instance.signOut();
@@ -56,6 +57,33 @@ Future<void> signOut() async {
       print("Error during clean logout sequence: $e");
     }
   }
+
+  // Future<UserCredential> createAccount({
+  //   required String username,
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   UserCredential userCredential = await firebaseAuth
+  //       .createUserWithEmailAndPassword(email: email, password: password);
+
+  //   User? newUser = userCredential.user;
+  //   if (newUser != null) {
+  //     await newUser.updateDisplayName(username);
+  //     await newUser.reload();
+
+  //     await FirebaseFirestore.instance
+  //         .collection("users")
+  //         .doc(newUser.uid)
+  //         .set({
+  //           "uid": newUser.uid,
+  //           "name": username,
+  //           "email": email,
+  //           "createdAt": FieldValue.serverTimestamp(),
+  //         });
+  //   }
+
+  //   return userCredential;
+  // }
   Future<UserCredential> createAccount({
     required String username,
     required String email,
@@ -65,19 +93,23 @@ Future<void> signOut() async {
         .createUserWithEmailAndPassword(email: email, password: password);
 
     User? newUser = userCredential.user;
+
     if (newUser != null) {
       await newUser.updateDisplayName(username);
-      await newUser.reload();
+
+      await FirebaseFirestore.instance.collection("users").doc(newUser.uid).set(
+        {
+          "name": username,
+          "email": email,
+          "createdAt": FieldValue.serverTimestamp(),
+        },
+      );
+
+      print("USER DOC CREATED");
     }
 
     return userCredential;
   }
-
-
-
-
-
-
 
   Future<void> resetPassword({required String email}) async {
     await firebaseAuth.sendPasswordResetEmail(email: email);

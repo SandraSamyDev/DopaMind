@@ -1,6 +1,8 @@
 import 'package:dopamind/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
+import '../screens/task_details_screen.dart';
+import '../widgets/task_card.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task; // FIX: Updated from Task to TaskModel
@@ -25,7 +27,9 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Dynamically calculate steps from your subtasks list
     final int totalSteps = task.subtasks.length;
-    final int completedSteps = task.subtasks.where((sub) => sub['isDone'] == true).length;
+    final int completedSteps = task.subtasks
+        .where((sub) => sub['isDone'] == true)
+        .length;
 
     return GestureDetector(
       onTap: onTap,
@@ -42,7 +46,9 @@ class TaskCard extends StatelessWidget {
             // Checkbox Indicator
             CircleAvatar(
               radius: 12,
-              backgroundColor: task.isCompleted // FIX: changed to isCompleted
+              backgroundColor:
+                  task
+                      .isCompleted // FIX: changed to isCompleted
                   ? AppColors.primary
                   : Colors.grey.shade300,
               child: task.isCompleted
@@ -61,7 +67,9 @@ class TaskCard extends StatelessWidget {
                     task.title,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -92,7 +100,10 @@ class TaskCard extends StatelessWidget {
               ),
               child: Text(
                 task.priority,
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
 
@@ -100,16 +111,10 @@ class TaskCard extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'details') {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: Text(task.title),
-                      content: Text(
-                        "Description: ${task.description}\n\n"
-                        "Steps: $completedSteps/$totalSteps\n"
-                        "Priority: ${task.priority}\n"
-                        "Focus Mode: ${task.focusMode}",
-                      ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TaskDetailsScreen(task: task),
                     ),
                   );
                 }
