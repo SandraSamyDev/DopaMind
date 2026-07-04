@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/task_model.dart';
 import '../services/task_service.dart';
 import 'dart:async';
@@ -20,7 +20,9 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> addTask(TaskModel task) async {
-    print("inside provider addTask");
+    if (kDebugMode) {
+      print("inside provider addTask");
+    }
     await _taskService.addTask(task);
   }
 
@@ -33,7 +35,9 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> saveTask(TaskModel task) async {
-    print("inside provider");
+    if (kDebugMode) {
+      print("inside provider");
+    }
     final exists = _tasks.any((t) => t.id == task.id);
 
     if (exists) {
@@ -48,4 +52,6 @@ class TaskProvider extends ChangeNotifier {
     _tasksSubscription?.cancel();
     notifyListeners();
   }
+
+
 }

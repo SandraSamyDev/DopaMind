@@ -1,10 +1,9 @@
 import 'package:dopamind/auth/auth_service.dart';
-import 'package:dopamind/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/gradient_button.dart';
-import '../core/app_colors.dart';
+import '../../widgets/auth_widget/auth_scaffold.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/gradient_button.dart';
+import '../../core/app_colors.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -92,7 +91,7 @@ try {
                   ),
                   child: Column(
                     children: [
-                      AppTextField(
+                      CustomTextField(
                         controller: _usernameController,
                         label: "Full Name",
                         hint: "Enter your name",
@@ -108,7 +107,7 @@ try {
 
                       const SizedBox(height: 16),
 
-                      AppTextField(
+                      CustomTextField(
                         controller: _emailController,
                         label: "Email",
                         hint: "Enter your email",
@@ -124,7 +123,7 @@ try {
 
                       const SizedBox(height: 16),
 
-                      AppTextField(
+                      CustomTextField(
                         controller: _passwordController,
                         label: "Password",
                         hint: "Enter password",
@@ -140,7 +139,7 @@ try {
 
                       const SizedBox(height: 16),
 
-                      AppTextField(
+                      CustomTextField(
                         controller: _comfirmPasswordController,
                         label: "Confirm Password",
                         hint: "Re-enter password",

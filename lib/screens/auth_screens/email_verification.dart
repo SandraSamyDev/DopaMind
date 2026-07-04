@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dopamind/auth/auth_service.dart';
-import 'package:dopamind/screens/logout.dart';
 import 'package:flutter/material.dart';
 
 class EmailVerification extends StatefulWidget {
@@ -134,13 +133,20 @@ Future<void> _verifyCurrentUser() async {
     if (isVerified) {
       // You don't need manual navigation! 
       // Setting state or letting AuthGate notice the change shifts the app automatically.
-      ScaffoldMessenger.of(context).showSnackBar(
+if(context.mounted){
+                ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Email verified successfully!")),
       );
+}
+
+      
+
     } else {
+     if(context.mounted){
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Email not verified yet. Please check your inbox.")),
       );
+     }
     }
   },
   child: const Text("I've Clicked the Link"),

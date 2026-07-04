@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-class AppTextField extends StatelessWidget {
+class CustomTextField extends StatelessWidget {
   final TextEditingController? controller; // Added this line
   final String label;
   final String hint;
   final IconData icon;
   final bool isPassword;
+  final int maxLines;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
 
   
 
-  const AppTextField({
+  const CustomTextField({
     super.key,
     this.controller, // Added this line
     required this.label,
@@ -19,7 +20,8 @@ class AppTextField extends StatelessWidget {
     required this.icon,
     this.isPassword = false,
     this.validator,
-    this.onChanged
+    this.onChanged,
+    this.maxLines =1
   });
 
   @override
@@ -40,6 +42,7 @@ class AppTextField extends StatelessWidget {
           validator: validator,
           obscureText: isPassword,
           onChanged: onChanged,
+          maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, color: const Color(0xFF3B5571)),

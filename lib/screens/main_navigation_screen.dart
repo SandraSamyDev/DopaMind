@@ -1,8 +1,6 @@
 import 'package:dopamind/screens/tasks_screen.dart';
 import 'package:flutter/material.dart';
 import '../screens/home_screen.dart';
-import '../screens/task_editor_screen.dart';
-import '../screens/task_details_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../core/app_colors.dart';
 

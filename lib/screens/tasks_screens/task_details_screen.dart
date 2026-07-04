@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import '../widgets/task_header.dart';
-import '../widgets/progress_section.dart';
-import '../widgets/info_card.dart';
-import '../widgets/subtasks_list.dart';
-import '../../../core/app_colors.dart';
-import '../screens/task_editor_screen.dart';
-import '../models/task_model.dart';
-import '../widgets/task_button.dart';
+import '../../widgets/tasks_widgets/task_header.dart';
+import '../../widgets/progress_section.dart';
+import '../../widgets/info_card.dart';
+import '../../widgets/subtasks_widgets/subtasks_list.dart';
+import '../../../../core/app_colors.dart';
+import 'task_editor_screen.dart';
+import '../../models/task_model.dart';
+import '../../widgets/tasks_widgets/task_button.dart';
 import 'package:provider/provider.dart';
-import '../providers/task_provider.dart';
-import '../screens/panic_setup_screen.dart';
-import '../screens/panic_focus_screen.dart';
-
+import '../../providers/task_provider.dart';
 class TaskDetailsScreen extends StatefulWidget {
   final TaskModel task;
 
@@ -78,65 +75,65 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     dueDate: task.dueDate,
                   ),
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xffFFF4E5),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "Panic Mode",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                  // Container(
+                  //   padding: const EdgeInsets.all(18),
+                  //   decoration: BoxDecoration(
+                  //     color: const Color(0xffFFF4E5),
+                  //     borderRadius: BorderRadius.circular(18),
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       const Row(
+                  //         children: [
+                  //           Icon(
+                  //             Icons.warning_amber_rounded,
+                  //             color: Colors.orange,
+                  //           ),
+                  //           SizedBox(width: 8),
+                  //           Text(
+                  //             "Panic Mode",
+                  //             style: TextStyle(
+                  //               fontSize: 18,
+                  //               fontWeight: FontWeight.bold,
+                  //             ),
+                  //           ),
+                  //         ],
+                  //       ),
 
                         const SizedBox(height: 10),
 
-                        const Text(
-                          "Deadline is getting close?\nFocus on this task only.",
-                        ),
+                  //       const Text(
+                  //         "Deadline is getting close?\nFocus on this task only.",
+                  //       ),
 
-                        const SizedBox(height: 16),
+                  //       const SizedBox(height: 16),
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      PanicSetupScreen(taskTitle: task.title),
-                                ),
-                              );
-                            },
-                            child: const Text("Start Panic Mode"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  //       SizedBox(
+                  //         width: double.infinity,
+                  //         child: ElevatedButton(
+                  //           style: ElevatedButton.styleFrom(
+                  //             backgroundColor: Colors.orange,
+                  //             foregroundColor: Colors.white,
+                  //             shape: RoundedRectangleBorder(
+                  //               borderRadius: BorderRadius.circular(14),
+                  //             ),
+                  //           ),
+                  //           onPressed: () {
+                  //             Navigator.push(
+                  //               context,
+                  //               MaterialPageRoute(
+                  //                 builder: (_) =>
+                  //                     PanicSetupScreen(taskTitle: task.title, blockedAppsFromTask: [],),
+                  //               ),
+                  //             );
+                  //           },
+                  //           child: const Text("Start Panic Mode"),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
 
                   const SizedBox(height: 20),
                   AnimatedSwitcher(
@@ -147,10 +144,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.08),
+                              color: AppColors.primary.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.2),
+                                color: AppColors.primary.withValues(alpha: 0.2),
                               ),
                             ),
                             child: const Row(
@@ -205,7 +202,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     height: 56,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                       border: Border.all(color: AppColors.primary, width: 1.5),
                     ),
                     child: Material(
@@ -265,8 +262,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
                       await context.read<TaskProvider>().updateTask(task);
 
-                      if (!mounted) return;
-                      Navigator.pop(context);
+                      if(context.mounted){
+                        Navigator.pop(context);
+                      }
+                      
                     },
                   ),
                 ),
@@ -275,98 +274,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showEditTaskDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.edit_note_rounded,
-                  size: 60,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Edit Task",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Task editing will be available soon.",
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                    ),
-                    child: const Text(
-                      "Got it",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAddSubtaskDialog() {
-    final controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add New Step"),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: "Enter subtask title"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  setState(() {
-                    task.subtasks.add({
-                      "title": controller.text.trim(),
-                      "done": false,
-                    });
-                  });
-
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Add"),
-            ),
-          ],
-        );
-      },
     );
   }
 }

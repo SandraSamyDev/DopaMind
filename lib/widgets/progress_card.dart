@@ -62,7 +62,7 @@ class ProgressCard extends StatelessWidget {
           const SizedBox(height: 16),
 
           LinearProgressIndicator(
-            value: progress,
+            value: progress.clamp(0.0, 1.0),
             borderRadius: BorderRadius.circular(10),
             color: AppColors.primary,
             minHeight: 8,

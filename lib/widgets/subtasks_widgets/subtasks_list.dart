@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'subtask_item.dart';
-import 'add_subtask_button.dart';
 
 class SubtasksList extends StatelessWidget {
   final List<Map<String, dynamic>> subtasks;

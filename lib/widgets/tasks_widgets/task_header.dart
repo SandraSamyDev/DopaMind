@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
-import '../core/app_text.dart ';
+import '../../core/app_colors.dart';
+import '../../core/app_text.dart ';
 
 class TaskHeader extends StatelessWidget {
   final DateTime dueDate;

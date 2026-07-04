@@ -1,6 +1,5 @@
-import 'package:dopamind/auth/auth_gate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -21,12 +20,10 @@ class AuthService {
 
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // 1. Correct modern initialization format
       await GoogleSignIn.instance.initialize(
         serverClientId:
             '616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com',
       );
-
       final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
           .authenticate();
 
@@ -44,7 +41,9 @@ class AuthService {
 
       return await firebaseAuth.signInWithCredential(credential);
     } catch (e) {
-      print("Google Auth Stalled Event Info: $e");
+      if (kDebugMode) {
+        print("Google Auth Stalled Event Info: $e");
+      }
       rethrow;
     }
   }
@@ -54,36 +53,12 @@ class AuthService {
       await firebaseAuth.signOut();
       await GoogleSignIn.instance.signOut();
     } catch (e) {
-      print("Error during clean logout sequence: $e");
+      if (kDebugMode) {
+        print("Error during clean logout sequence: $e");
+      }
     }
   }
 
-  // Future<UserCredential> createAccount({
-  //   required String username,
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   UserCredential userCredential = await firebaseAuth
-  //       .createUserWithEmailAndPassword(email: email, password: password);
-
-  //   User? newUser = userCredential.user;
-  //   if (newUser != null) {
-  //     await newUser.updateDisplayName(username);
-  //     await newUser.reload();
-
-  //     await FirebaseFirestore.instance
-  //         .collection("users")
-  //         .doc(newUser.uid)
-  //         .set({
-  //           "uid": newUser.uid,
-  //           "name": username,
-  //           "email": email,
-  //           "createdAt": FieldValue.serverTimestamp(),
-  //         });
-  //   }
-
-  //   return userCredential;
-  // }
   Future<UserCredential> createAccount({
     required String username,
     required String email,
@@ -105,7 +80,9 @@ class AuthService {
         },
       );
 
-      print("USER DOC CREATED");
+      if (kDebugMode) {
+        print("USER DOC CREATED");
+      }
     }
 
     return userCredential;

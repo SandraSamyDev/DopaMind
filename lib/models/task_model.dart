@@ -28,10 +28,11 @@ class TaskModel {
   DateTime dueDate;
   TimeOfDay reminder;
   List<Map<String, dynamic>> subtasks;
+  int actualTimeSpentMinutes;
+  
 
   final String id;
   int durationMinutes;
-  List<String> blockedAppsPackages;
   bool isCompleted;
   DateTime? completedAt;
 
@@ -45,10 +46,41 @@ class TaskModel {
     required this.subtasks,
     required this.id,
     required this.durationMinutes,
-    required this.blockedAppsPackages,
+    
     this.isCompleted = false,
     this.completedAt,
+    this.actualTimeSpentMinutes = 0,
   });
+
+  TaskModel copyWith({
+    String? title,
+    String? description,
+    String? priority,
+    String? focusMode,
+    DateTime? dueDate,
+    TimeOfDay? reminder,
+    List<Map<String, dynamic>>? subtasks,
+    int? actualTimeSpentMinutes,
+    String? id,
+    int? durationMinutes,
+    bool? isCompleted,
+    DateTime? completedAt,
+  }) {
+    return TaskModel(
+      title: title ?? this.title,
+      description: description ?? this.description,
+      priority: priority ?? this.priority,
+      focusMode: focusMode ?? this.focusMode,
+      dueDate: dueDate ?? this.dueDate,
+      reminder: reminder ?? this.reminder,
+      subtasks: subtasks ?? this.subtasks,
+      actualTimeSpentMinutes: actualTimeSpentMinutes ?? this.actualTimeSpentMinutes,
+      id: id ?? this.id,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -61,8 +93,8 @@ class TaskModel {
       'reminderHour': reminder.hour,
       'reminderMinute': reminder.minute,
       'subtasks': subtasks,
+      'actualTimeSpentMinutes': actualTimeSpentMinutes ,
       'durationMinutes': durationMinutes,
-      'blockedAppsPackages': blockedAppsPackages,
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
     };
@@ -82,7 +114,7 @@ class TaskModel {
       ),
       subtasks: List<Map<String, dynamic>>.from(map['subtasks']),
       durationMinutes: map['durationMinutes'],
-      blockedAppsPackages: List<String>.from(map['blockedAppsPackages']),
+      actualTimeSpentMinutes: map['actualTimeSpentMinutes'] ?? 0,
       isCompleted: map['isCompleted'],
       completedAt: map['completedAt'] != null
     ? DateTime.parse(map['completedAt'])

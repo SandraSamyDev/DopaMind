@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
-import 'focus_screen.dart';
 
 class TipsScreen extends StatelessWidget {
   final String title;
@@ -50,7 +49,7 @@ class TipsScreen extends StatelessWidget {
             Center(
               child: CircleAvatar(
                 radius: 45,
-                backgroundColor: iconColor.withOpacity(.15),
+                backgroundColor: iconColor.withValues(alpha: 0.15),
                 child: Icon(icon, size: 45, color: iconColor),
               ),
             ),
@@ -104,7 +103,7 @@ class TipsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
 
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(18),
               ),
 
@@ -127,10 +126,10 @@ class TipsScreen extends StatelessWidget {
 
                 onPressed: () {
                   if (buttonText == "Start Focus") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const FocusScreen()),
-                    );
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(builder: (_) => const FocusScreen(tas)),
+                    // );
                   } else {
                     Navigator.popUntil(context, (route) => route.isFirst);
                   }

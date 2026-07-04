@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
-import 'tips_screen.dart';
+import '../../core/app_colors.dart';
+import '../tips_screen.dart';
 
-class OverwhelmedScreen extends StatelessWidget {
-  const OverwhelmedScreen({super.key});
+class LowEnergyScreen extends StatelessWidget {
+  const LowEnergyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class OverwhelmedScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          "Overwhelmed",
+          "Low Energy",
           style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.bold),
         ),
       ),
@@ -31,16 +31,16 @@ class OverwhelmedScreen extends StatelessWidget {
 
             const Center(
               child: Icon(
-                Icons.psychology_alt,
+                Icons.battery_0_bar,
                 size: 70,
-                color: Color(0xffF59E0B),
+                color: Color(0xff3B82F6),
               ),
             ),
 
             const SizedBox(height: 20),
 
             const Text(
-              "What's making today feel difficult?",
+              "What's draining your energy?",
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -51,7 +51,7 @@ class OverwhelmedScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             const Text(
-              "Choose what feels closest to your situation.",
+              "Let's make today a little easier.",
               style: TextStyle(color: AppColors.grey),
             ),
 
@@ -59,32 +59,15 @@ class OverwhelmedScreen extends StatelessWidget {
 
             buildOption(
               context,
-              Icons.checklist,
-              "Too many tasks",
-              "Let's simplify things.",
+              Icons.hotel,
+              "I'm mentally exhausted",
+              "Your brain needs a gentle reset.",
               const Color(0xff3B82F6),
               [
-                "Write everything down.",
-                "Choose ONE task only.",
-                "Ignore the rest for now.",
-                "You can come back later.",
-              ],
-              "I picked one task",
-            ),
-
-            const SizedBox(height: 16),
-
-            buildOption(
-              context,
-              Icons.warning_amber,
-              "Everything feels urgent",
-              "Let's slow everything down.",
-              const Color(0xffF59E0B),
-              [
-                "Take one deep breath.",
-                "Not everything needs to be done now.",
-                "Choose the single most urgent thing.",
-                "Everything else can wait.",
+                "Drink a glass of water.",
+                "Stretch for one minute.",
+                "Take three slow breaths.",
+                "Then come back and do one tiny task.",
               ],
               "I'm Ready",
             ),
@@ -93,33 +76,51 @@ class OverwhelmedScreen extends StatelessWidget {
 
             buildOption(
               context,
-              Icons.play_arrow,
-              "I don't know where to start",
-              "Starting is harder than doing.",
+              Icons.play_circle_outline,
+              "I can't get started",
+              "Let's lower the pressure.",
               const Color(0xff10B981),
               [
-                "Pick the easiest thing.",
-                "Work for only 5 minutes.",
-                "Don't aim for perfect.",
-                "Once you start, momentum will help.",
+                "Forget finishing.",
+                "Work for only 2 minutes.",
+                "Starting is enough.",
+                "You can stop after that if you want.",
               ],
               "Let's Start",
             ),
 
             const SizedBox(height: 16),
+
             buildOption(
               context,
-              Icons.phone_android,
-              "I keep getting distracted",
-              "Let's remove distractions.",
-              const Color(0xff6366F1),
+              Icons.music_note,
+              "I need motivation",
+              "Let's boost your dopamine.",
+              const Color(0xffEC4899),
               [
-                "Start a Focus Session.",
-                "Block distracting apps.",
-                "Keep your phone away for 15 minutes.",
-                "Focus on only ONE thing.",
+                "Play your favorite song.",
+                "Open a sunny window.",
+                "Reward yourself after a small step.",
+                "Celebrate tiny wins.",
               ],
-              "Start Focus",
+              "Feeling Better",
+            ),
+
+            const SizedBox(height: 16),
+
+            buildOption(
+              context,
+              Icons.favorite_outline,
+              "I feel like giving up",
+              "Be kind to yourself.",
+              const Color(0xff8B5CF6),
+              [
+                "You're not lazy.",
+                "Your energy changes, and that's okay.",
+                "Doing something small is enough today.",
+                "Progress is still progress.",
+              ],
+              "I'll Keep Going",
             ),
           ],
         ),
@@ -137,6 +138,8 @@ class OverwhelmedScreen extends StatelessWidget {
     String buttonText,
   ) {
     return InkWell(
+      borderRadius: BorderRadius.circular(20),
+
       onTap: () {
         Navigator.push(
           context,
@@ -152,17 +155,21 @@ class OverwhelmedScreen extends StatelessWidget {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(20),
+
       child: Container(
         padding: const EdgeInsets.all(20),
+
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
         ),
+
         child: Row(
           children: [
             Icon(icon, color: AppColors.primary),
+
             const SizedBox(width: 16),
+
             Expanded(
               child: Text(
                 title,
@@ -172,6 +179,7 @@ class OverwhelmedScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             const Icon(Icons.arrow_forward_ios, size: 18),
           ],
         ),

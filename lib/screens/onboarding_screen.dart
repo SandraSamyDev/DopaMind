@@ -1,6 +1,6 @@
 import 'package:dopamind/models/onboarding_model.dart';
-import 'package:dopamind/screens/login_screen.dart';
-import 'package:dopamind/widgets/onboarding_widget.dart';
+import 'package:dopamind/screens/auth_screens/login_screen.dart';
+import 'package:dopamind/widgets/onboarding_widgets/onboarding_widget.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen extends StatefulWidget {
