@@ -1,10 +1,10 @@
 import 'package:dopamind/auth/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/gradient_button.dart';
-import '../core/app_colors.dart';
+import '../../widgets/auth_widget/auth_scaffold.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/gradient_button.dart';
+import '../../core/app_colors.dart';
 import 'forgot_password.dart';
 import 'signup_screen.dart';
 
@@ -30,6 +30,7 @@ super.dispose();
 
   void login(email,password) async {
     try {
+      if (!mounted) return;
       await _authService.signIn(email: email, password: password);
            } on FirebaseAuthException catch (e) {
             if (!mounted) return null;
@@ -108,7 +109,7 @@ super.dispose();
                 ),
                 child: Column(
                   children: [
-                    AppTextField(
+                    CustomTextField(
                       controller: _emailController,
                       label: "Email",
                       hint: "Enter your email",
@@ -117,7 +118,7 @@ super.dispose();
 
                     const SizedBox(height: 16),
 
-                    AppTextField(
+                    CustomTextField(
                       controller: _passwordController,
                       label: "Password",
                       hint: "Enter your password",

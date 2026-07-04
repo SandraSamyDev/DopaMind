@@ -1,18 +1,20 @@
 import 'package:dopamind/screens/home_screen.dart';
-import 'package:dopamind/screens/login_screen.dart';
-import 'package:dopamind/screens/signup_screen.dart';
+import 'package:dopamind/screens/auth_screens/login_screen.dart';
+import 'package:dopamind/screens/auth_screens/signup_screen.dart';
 import 'package:dopamind/screens/splash_screen.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:flutter/foundation.dart';
+import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
-import 'screens/task_details_screen.dart';
+import 'package:zo_app_blocker/zo_app_blocker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  await ZoAppBlocker.instance.initialize(blockScreenCallback: onBlockScreenRequested);
 
   // await FirebaseAppCheck.instance.activate(
   //  providerAndroid: kDebugMode
@@ -25,6 +27,43 @@ void main() async {
       providers: [ChangeNotifierProvider(create: (_) => TaskProvider())],
       child: const DopaMindApp(),
     ),
+  );
+}
+
+@pragma('vm:entry-point')
+void onBlockScreenRequested() {
+  ZoBlockScreenRunner.run(
+    builder: (context) {
+      return Scaffold(
+        backgroundColor: Colors.black87,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (context.appIcon != null)
+                Image.memory(context.appIcon!, width: 100, height: 100),
+              const SizedBox(height: 24),
+              Text(
+                '${context.appName ?? 'App'} is Blocked!',
+                style: const TextStyle(color: Colors.white, fontSize: 24),
+              ),
+              const SizedBox(height: 48),
+              // Dismiss button
+              ElevatedButton(
+                onPressed: ()async{
+                                    context.onDismiss();
+
+                },
+                child: const Text('Exit'),
+              ),
+              const SizedBox(height: 16),
+              // Unlock button for the current session
+              
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -42,16 +81,6 @@ class _DopaMindAppState extends State<DopaMindApp> {
       title: 'DopaMind',
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
-
-      // task: TaskModel(
-      //   id: '1',
-      //   title: 'Sample Task',
-      //   description: 'This is a sample task description.',
-      //   date: DateTime.now(),
-      //   time: TimeOfDay.now(),
-      //   progress: 0.5,
-      // )
-      // // Set the initial screen to SplashScreen
       routes: {
         "sign up": (context) => SignUpPage(),
         "log in": (context) => LoginPage(),

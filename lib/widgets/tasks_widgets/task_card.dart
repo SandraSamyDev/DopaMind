@@ -1,8 +1,7 @@
 import 'package:dopamind/core/app_colors.dart';
 import 'package:flutter/material.dart';
-import '../models/task_model.dart';
-import '../screens/task_details_screen.dart';
-import '../widgets/task_card.dart';
+import '../../models/task_model.dart';
+import '../../screens/tasks_screens/task_details_screen.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task; // FIX: Updated from Task to TaskModel

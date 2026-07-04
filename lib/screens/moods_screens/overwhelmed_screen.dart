@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
-import 'tips_screen.dart';
+import '../../core/app_colors.dart';
+import '../tips_screen.dart';
 
-class BoredScreen extends StatelessWidget {
-  const BoredScreen({super.key});
+class OverwhelmedScreen extends StatelessWidget {
+  const OverwhelmedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class BoredScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          "Bored",
+          "Overwhelmed",
           style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.bold),
         ),
       ),
@@ -31,16 +31,16 @@ class BoredScreen extends StatelessWidget {
 
             const Center(
               child: Icon(
-                Icons.sentiment_neutral_outlined,
+                Icons.psychology_alt,
                 size: 70,
-                color: Color(0xff8B5CF6),
+                color: Color(0xffF59E0B),
               ),
             ),
 
             const SizedBox(height: 20),
 
             const Text(
-              "Need a little dopamine?",
+              "What's making today feel difficult?",
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -51,7 +51,7 @@ class BoredScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             const Text(
-              "Choose something that sounds fun right now.",
+              "Choose what feels closest to your situation.",
               style: TextStyle(color: AppColors.grey),
             ),
 
@@ -59,68 +59,67 @@ class BoredScreen extends StatelessWidget {
 
             buildOption(
               context,
-              Icons.music_note,
-              "Listen to Music",
-              "A favorite song can instantly change your mood.",
-              const Color(0xffEC4899),
-              [
-                "Play your favorite song.",
-                "Dance or move for one minute.",
-                "Smile if you can.",
-                "Enjoy the moment.",
-              ],
-              "Feeling Better",
-            ),
-
-            const SizedBox(height: 16),
-
-            buildOption(
-              context,
-              Icons.language,
-              "Learn Something New",
-              "Your brain loves novelty.",
+              Icons.checklist,
+              "Too many tasks",
+              "Let's simplify things.",
               const Color(0xff3B82F6),
               [
-                "Learn one word in a new language.",
-                "Watch a 5-minute educational video.",
-                "Read one interesting fact.",
-                "Curiosity creates motivation.",
+                "Write everything down.",
+                "Choose ONE task only.",
+                "Ignore the rest for now.",
+                "You can come back later.",
               ],
-              "That Was Fun",
+              "I picked one task",
             ),
 
             const SizedBox(height: 16),
 
             buildOption(
               context,
-              Icons.directions_walk,
-              "Go for a Short Walk",
-              "Movement helps reset your brain.",
-              const Color(0xff10B981),
-              [
-                "Walk for 5-10 minutes.",
-                "Get some fresh air.",
-                "Stretch while walking.",
-                "Come back feeling refreshed.",
-              ],
-              "I'm Refreshed",
-            ),
-
-            const SizedBox(height: 16),
-
-            buildOption(
-              context,
-              Icons.palette_outlined,
-              "Try a New Hobby",
-              "Doing something creative wakes up your brain.",
+              Icons.warning_amber,
+              "Everything feels urgent",
+              "Let's slow everything down.",
               const Color(0xffF59E0B),
               [
-                "Draw something small.",
-                "Read a few pages of a book.",
-                "Take a nice photo.",
-                "Cook or try a simple recipe.",
+                "Take one deep breath.",
+                "Not everything needs to be done now.",
+                "Choose the single most urgent thing.",
+                "Everything else can wait.",
               ],
-              "Let's Go",
+              "I'm Ready",
+            ),
+
+            const SizedBox(height: 16),
+
+            buildOption(
+              context,
+              Icons.play_arrow,
+              "I don't know where to start",
+              "Starting is harder than doing.",
+              const Color(0xff10B981),
+              [
+                "Pick the easiest thing.",
+                "Work for only 5 minutes.",
+                "Don't aim for perfect.",
+                "Once you start, momentum will help.",
+              ],
+              "Let's Start",
+            ),
+
+            const SizedBox(height: 16),
+            buildOption(
+              context,
+              Icons.phone_android,
+              "I keep getting distracted",
+              "Let's remove distractions.",
+              const Color(0xff6366F1),
+              [
+                "Start a Focus Session.",
+                "Block distracting apps.",
+                "Keep your phone away for 15 minutes.",
+                "Focus on only ONE thing.",
+              ],
+              "Start Focus",
             ),
           ],
         ),
@@ -138,8 +137,6 @@ class BoredScreen extends StatelessWidget {
     String buttonText,
   ) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
-
       onTap: () {
         Navigator.push(
           context,
@@ -155,21 +152,17 @@ class BoredScreen extends StatelessWidget {
           ),
         );
       },
-
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(20),
-
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
         ),
-
         child: Row(
           children: [
             Icon(icon, color: AppColors.primary),
-
             const SizedBox(width: 16),
-
             Expanded(
               child: Text(
                 title,
@@ -179,7 +172,6 @@ class BoredScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const Icon(Icons.arrow_forward_ios, size: 18),
           ],
         ),

@@ -1,9 +1,9 @@
 import 'package:dopamind/core/app_colors.dart';
-import 'package:dopamind/screens/login_screen.dart';
+import 'package:dopamind/screens/auth_screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import '../widgets/auth_scaffold.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/gradient_button.dart';
+import '../../widgets/auth_widget/auth_scaffold.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/gradient_button.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
@@ -57,7 +57,7 @@ class ForgotPasswordPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const AppTextField(
+                    const CustomTextField(
                       label: "Email",
                       hint: "Enter your email",
                       icon: Icons.email_outlined,

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/app_colors.dart';
 import '../providers/task_provider.dart';
-import '../models/task_model.dart';
-import 'task_details_screen.dart';
+import 'tasks_screens/task_details_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -18,7 +17,10 @@ class _TasksScreenState extends State<TasksScreen> {
     super.initState();
 
     Future.microtask(() {
-      context.read<TaskProvider>().listenToTasks();
+if (!mounted) return ;
+   context.read<TaskProvider>().listenToTasks();
+
+     
     });
   }
 
@@ -93,7 +95,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       boxShadow: [
                         BoxShadow(
                           blurRadius: 12,
-                          color: Colors.black.withOpacity(.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                         ),
                       ],
                     ),
@@ -121,7 +123,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               decoration: BoxDecoration(
                                 color: getPriorityColor(
                                   task.priority,
-                                ).withOpacity(.15),
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(

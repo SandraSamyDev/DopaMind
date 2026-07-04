@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
+import '../../core/app_colors.dart';
 
 class TaskButton extends StatefulWidget {
   final bool isCompleted;
@@ -27,7 +27,7 @@ class _TaskButtonState extends State<TaskButton> {
         boxShadow: [
           BoxShadow(
             color: (widget.isCompleted ? Colors.green : AppColors.primary)
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

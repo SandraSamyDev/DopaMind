@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
-import 'tips_screen.dart';
+import '../../core/app_colors.dart';
+import '../tips_screen.dart';
 
-class LowEnergyScreen extends StatelessWidget {
-  const LowEnergyScreen({super.key});
+class BoredScreen extends StatelessWidget {
+  const BoredScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class LowEnergyScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          "Low Energy",
+          "Bored",
           style: TextStyle(color: AppColors.dark, fontWeight: FontWeight.bold),
         ),
       ),
@@ -31,16 +31,16 @@ class LowEnergyScreen extends StatelessWidget {
 
             const Center(
               child: Icon(
-                Icons.battery_0_bar,
+                Icons.sentiment_neutral_outlined,
                 size: 70,
-                color: Color(0xff3B82F6),
+                color: Color(0xff8B5CF6),
               ),
             ),
 
             const SizedBox(height: 20),
 
             const Text(
-              "What's draining your energy?",
+              "Need a little dopamine?",
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -51,7 +51,7 @@ class LowEnergyScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             const Text(
-              "Let's make today a little easier.",
+              "Choose something that sounds fun right now.",
               style: TextStyle(color: AppColors.grey),
             ),
 
@@ -59,49 +59,15 @@ class LowEnergyScreen extends StatelessWidget {
 
             buildOption(
               context,
-              Icons.hotel,
-              "I'm mentally exhausted",
-              "Your brain needs a gentle reset.",
-              const Color(0xff3B82F6),
-              [
-                "Drink a glass of water.",
-                "Stretch for one minute.",
-                "Take three slow breaths.",
-                "Then come back and do one tiny task.",
-              ],
-              "I'm Ready",
-            ),
-
-            const SizedBox(height: 16),
-
-            buildOption(
-              context,
-              Icons.play_circle_outline,
-              "I can't get started",
-              "Let's lower the pressure.",
-              const Color(0xff10B981),
-              [
-                "Forget finishing.",
-                "Work for only 2 minutes.",
-                "Starting is enough.",
-                "You can stop after that if you want.",
-              ],
-              "Let's Start",
-            ),
-
-            const SizedBox(height: 16),
-
-            buildOption(
-              context,
               Icons.music_note,
-              "I need motivation",
-              "Let's boost your dopamine.",
+              "Listen to Music",
+              "A favorite song can instantly change your mood.",
               const Color(0xffEC4899),
               [
                 "Play your favorite song.",
-                "Open a sunny window.",
-                "Reward yourself after a small step.",
-                "Celebrate tiny wins.",
+                "Dance or move for one minute.",
+                "Smile if you can.",
+                "Enjoy the moment.",
               ],
               "Feeling Better",
             ),
@@ -110,17 +76,51 @@ class LowEnergyScreen extends StatelessWidget {
 
             buildOption(
               context,
-              Icons.favorite_outline,
-              "I feel like giving up",
-              "Be kind to yourself.",
-              const Color(0xff8B5CF6),
+              Icons.language,
+              "Learn Something New",
+              "Your brain loves novelty.",
+              const Color(0xff3B82F6),
               [
-                "You're not lazy.",
-                "Your energy changes, and that's okay.",
-                "Doing something small is enough today.",
-                "Progress is still progress.",
+                "Learn one word in a new language.",
+                "Watch a 5-minute educational video.",
+                "Read one interesting fact.",
+                "Curiosity creates motivation.",
               ],
-              "I'll Keep Going",
+              "That Was Fun",
+            ),
+
+            const SizedBox(height: 16),
+
+            buildOption(
+              context,
+              Icons.directions_walk,
+              "Go for a Short Walk",
+              "Movement helps reset your brain.",
+              const Color(0xff10B981),
+              [
+                "Walk for 5-10 minutes.",
+                "Get some fresh air.",
+                "Stretch while walking.",
+                "Come back feeling refreshed.",
+              ],
+              "I'm Refreshed",
+            ),
+
+            const SizedBox(height: 16),
+
+            buildOption(
+              context,
+              Icons.palette_outlined,
+              "Try a New Hobby",
+              "Doing something creative wakes up your brain.",
+              const Color(0xffF59E0B),
+              [
+                "Draw something small.",
+                "Read a few pages of a book.",
+                "Take a nice photo.",
+                "Cook or try a simple recipe.",
+              ],
+              "Let's Go",
             ),
           ],
         ),

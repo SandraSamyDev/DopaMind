@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
+import '../../core/app_colors.dart';
 
 class AuthScaffold extends StatelessWidget {
   final Widget child;

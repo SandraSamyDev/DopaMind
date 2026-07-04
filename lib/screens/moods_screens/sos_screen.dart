@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
+import '../../core/app_colors.dart';
 import 'anxious_screen.dart';
 import 'overwhelmed_screen.dart';
 import 'low_energy_screen.dart';
