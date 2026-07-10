@@ -7,7 +7,8 @@ import '../../widgets/subtasks_widgets/subtask_item.dart';
 import 'package:provider/provider.dart';
 import '../../providers/task_provider.dart';
 // import '../../../services/gemini_service.dart';
-import 'task_details_screen.dart';
+import '../../../services/task_generator.dart';
+import '../../widgets/focus_sound_selector.dart';
 
 class TaskEditorScreen extends StatefulWidget {
   final TaskModel task;
@@ -24,12 +25,13 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
   String selectedPriority = "Medium";
   String selectedEnergy = "Medium";
   String selectedDetail = "Normal";
-  String selectedTimeSlot = "Morning";
+  String selectedTimeSlot = "30 min";
+  int selectedMinutes = 60;
   String? selectedFocusMode;
-
+  String? selectedFocusSoundId;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
-  int selectedDurationTime=25;
+  int selectedDurationTime = 25;
 
   List<Map<String, dynamic>> subtasks = [];
   bool isGeneratingAI = false;
@@ -43,6 +45,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
     );
     selectedPriority = widget.task.priority;
     selectedFocusMode = widget.task.focusMode;
+    selectedFocusSoundId = widget.task.focusSoundId;
     selectedDate = widget.task.dueDate;
     selectedTime = widget.task.reminder;
     selectedDurationTime = widget.task.durationMinutes;
@@ -88,6 +91,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
   }
 
   Future<void> saveTask() async {
+    final bool taskCompleted = subtasks.every((s) => s["done"] == true);
     final updatedTask = TaskModel(
       id: widget.task.id,
       title: titleController.text,
@@ -98,8 +102,11 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
       reminder: selectedTime ?? TimeOfDay.now(),
       subtasks: subtasks,
       durationMinutes: widget.task.durationMinutes,
-      isCompleted: widget.task.isCompleted,
+      isCompleted: taskCompleted,
       completedAt: widget.task.completedAt,
+      actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes,
+      focusSessions: widget.task.focusSessions,
+      focusSoundId: selectedFocusSoundId,
     );
 
     try {
@@ -108,10 +115,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Task saved")));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => TaskDetailsScreen(task: updatedTask)),
-      );
+      Navigator.pop(context, updatedTask);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -250,7 +254,48 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              const Text(
+                "Level of Details",
+                style: TextStyle(
+                  color: AppColors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  _buildSelectionChip(
+                    "Simple",
+                    selectedDetail,
+                    (v) =>
+                        setModalState(() => setState(() => selectedDetail = v)),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  _buildSelectionChip(
+                    "Normal",
+                    selectedDetail,
+                    (v) =>
+                        setModalState(() => setState(() => selectedDetail = v)),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  _buildSelectionChip(
+                    "Detailed",
+                    selectedDetail,
+                    (v) =>
+                        setModalState(() => setState(() => selectedDetail = v)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -260,8 +305,19 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
                   ),
                   onPressed: () {
                     Navigator.pop(context);
-                    // Add your network API / LLM response processor trigger connection here
+
+                    final generatedSubtasks = TaskGenerator.generate(
+                      title: titleController.text,
+                      energy: selectedEnergy,
+                      detail: selectedDetail,
+                      durationMinutes: selectedDurationTime,
+                    );
+
+                    setState(() {
+                      subtasks = generatedSubtasks;
+                    });
                   },
+
                   child: const Text(
                     "Generate Custom Schedule",
                     style: TextStyle(
@@ -279,35 +335,34 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
   }
 
   void _showDurationPicker() {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (BuildContext context) {
-      return TaskDurationPicker(
-        initialDuration: Duration(minutes: selectedDurationTime),
-        onDurationChanged: (Duration totalDuration) {
-          setState(() {
-
-            selectedDurationTime = totalDuration.inMinutes;
-          });
-        },
-      );
-    },
-  );
-}
-
-String _formatDurationDisplay(int totalMinutes) {
-  if (totalMinutes == 0) return "Not set";
-  final int hours = totalMinutes ~/ 60;
-  final int minutes = totalMinutes % 60;
-  
-  if (hours > 0) {
-    return "$hours hr ${minutes > 0 ? '$minutes min' : ''}";
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return TaskDurationPicker(
+          initialDuration: Duration(minutes: selectedDurationTime),
+          onDurationChanged: (Duration totalDuration) {
+            setState(() {
+              selectedDurationTime = totalDuration.inMinutes;
+            });
+          },
+        );
+      },
+    );
   }
-  return "$minutes min";
-}
+
+  String _formatDurationDisplay(int totalMinutes) {
+    if (totalMinutes == 0) return "Not set";
+    final int hours = totalMinutes ~/ 60;
+    final int minutes = totalMinutes % 60;
+
+    if (hours > 0) {
+      return "$hours hr ${minutes > 0 ? '$minutes min' : ''}";
+    }
+    return "$minutes min";
+  }
 
   // Consolidated Priority styling map
   Map<String, Color> get _priorityColors {
@@ -503,7 +558,7 @@ String _formatDurationDisplay(int totalMinutes) {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             InkWell(
               onTap: _showDurationPicker,
               child: SectionTile(
@@ -552,16 +607,18 @@ String _formatDurationDisplay(int totalMinutes) {
               "Let us build a realistic plan based on your energy and available time",
               "Generate Steps",
               isGeneratingAI,
-              () {},
+              _openAIBottomSheet,
             ),
+
             const SizedBox(height: 18),
+
             _buildActionCard(
               Icons.psychology_alt_rounded,
               "Goblin Mode",
               "Can't start? Let's make it ridiculously easy.",
               "Give Me One Tiny Step",
               false,
-              () {},
+              _triggerGoblinMode,
             ),
             const SizedBox(height: 18),
             Row(

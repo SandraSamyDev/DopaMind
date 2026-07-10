@@ -14,16 +14,19 @@ class AnalyticsScreen extends StatelessWidget {
 
     final int totalTasks = tasks.length;
     final int completedTasks = tasks.where((task) => task.isCompleted).length;
-
+    final int totalSessions = tasks.fold(
+      0,
+      (sum, task) => sum + task.focusSessions,
+    );
     final int productivity = totalTasks == 0
         ? 0
         : ((completedTasks / totalTasks) * 100).round();
 
     final int longestSession = tasks.isEmpty
         ? 0
-        : tasks.map((e) => e.durationMinutes).reduce((a, b) => a > b ? a : b);
-
-
+        : tasks
+              .map((e) => e.actualTimeSpentMinutes)
+              .reduce((a, b) => a > b ? a : b);
     final int totalFocusMinutes = tasks.fold(
       0,
       (sum, task) => sum + task.actualTimeSpentMinutes,
@@ -72,8 +75,8 @@ class AnalyticsScreen extends StatelessWidget {
                     productivity >= 80
                         ? "You're doing great!"
                         : productivity >= 50
-                            ? "Keep going!"
-                            : "Let's finish some tasks!",
+                        ? "Keep going!"
+                        : "Let's finish some tasks!",
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
@@ -103,7 +106,7 @@ class AnalyticsScreen extends StatelessWidget {
                 ),
                 _buildStatCard(
                   title: "Sessions",
-                  value: "$completedTasks",
+                  value: "$totalSessions",
                   icon: Icons.timer_outlined,
                 ),
                 _buildStatCard(
@@ -130,19 +133,31 @@ class AnalyticsScreen extends StatelessWidget {
                   children: [
                     const Text(
                       "Time Spent Breakdown",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.dark),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.dark,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    ...tasks.where((t) => t.actualTimeSpentMinutes > 0).map((task) {
+                    ...tasks.where((t) => t.actualTimeSpentMinutes > 0).map((
+                      task,
+                    ) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(task.title, style: const TextStyle(color: AppColors.dark)),
+                            Text(
+                              task.title,
+                              style: const TextStyle(color: AppColors.dark),
+                            ),
                             Text(
                               "${task.actualTimeSpentMinutes} min",
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ],
                         ),

@@ -27,38 +27,44 @@ class TaskCard extends StatelessWidget {
     // Dynamically calculate steps from your subtasks list
     final int totalSteps = task.subtasks.length;
     final int completedSteps = task.subtasks
-        .where((sub) => sub['isDone'] == true)
+        .where((sub) => sub['done'] == true)
         .length;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(blurRadius: 10, color: Colors.black12)],
-        ),
-        child: Row(
-          children: [
-            // Checkbox Indicator
-            CircleAvatar(
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(blurRadius: 10, color: Colors.black12)],
+      ),
+      child: Row(
+        children: [
+          // Checkbox Indicator
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: CircleAvatar(
               radius: 12,
-              backgroundColor:
-                  task
-                      .isCompleted // FIX: changed to isCompleted
+              backgroundColor: task.isCompleted
                   ? AppColors.primary
                   : Colors.grey.shade300,
-              child: task.isCompleted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : CircleAvatar(radius: 10, backgroundColor: Colors.white),
             ),
+          ),
 
-            const SizedBox(width: 12),
+          const SizedBox(width: 12),
 
-            // Task Info Info Text
-            Expanded(
+          // Task Info Info Text
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TaskDetailsScreen(task: task),
+                  ),
+                );
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -90,40 +96,22 @@ class TaskCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Priority Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: getPriorityColor(),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                task.priority,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          ),
+          // Priority Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: getPriorityColor(),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Text(
+              task.priority,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+            ),
+          ),
 
-            // Context Menu Button
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'details') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => TaskDetailsScreen(task: task),
-                    ),
-                  );
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'details', child: Text("Show details")),
-              ],
-            ),
-          ],
-        ),
+          // Context Menu Button
+        ],
       ),
     );
   }

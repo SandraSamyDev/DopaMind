@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../screens/tasks_screens/task_editor_screen.dart';
+import '../models/task_model.dart';
+import '../screens/focus_screen.dart';
 
 class TipsScreen extends StatelessWidget {
   final String title;
@@ -125,12 +128,50 @@ class TipsScreen extends StatelessWidget {
                 ),
 
                 onPressed: () {
-                  if (buttonText == "Start Focus") {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(builder: (_) => const FocusScreen(tas)),
-                    // );
+                  if (buttonText == "Start Focus" ||
+                      buttonText == "Let's Start" ||
+                      buttonText == "I'm Ready") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FocusScreen(
+                          task: TaskModel(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            title: "",
+                            description: "",
+                            priority: "Medium",
+                            focusMode: "",
+                            dueDate: DateTime.now(),
+                            reminder: TimeOfDay.now(),
+                            subtasks: [],
+                            durationMinutes: 25,
+                          ),
+                        ),
+                      ),
+                    );
+                  } else if (buttonText == "I picked one task") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TaskEditorScreen(
+                          task: TaskModel(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            title: "",
+                            description: "",
+                            priority: "Medium",
+                            focusMode: "",
+                            dueDate: DateTime.now(),
+                            reminder: TimeOfDay.now(),
+                            subtasks: [],
+                            durationMinutes: 25,
+                          ),
+                        ),
+                      ),
+                    );
                   } else {
+                    // باقي الأزرار ترجع للهوم
                     Navigator.popUntil(context, (route) => route.isFirst);
                   }
                 },

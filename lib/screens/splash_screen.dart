@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'lib/assets/images/logo2.jpeg',
+                          'assets/images/logo2.jpeg',
                           fit: BoxFit.cover,
                         ),
                       ),

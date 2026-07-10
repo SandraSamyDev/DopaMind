@@ -29,12 +29,13 @@ class TaskModel {
   TimeOfDay reminder;
   List<Map<String, dynamic>> subtasks;
   int actualTimeSpentMinutes;
-  
+  final int focusSessions;
 
   final String id;
   int durationMinutes;
   bool isCompleted;
   DateTime? completedAt;
+  final String? focusSoundId;
 
   TaskModel({
     required this.title,
@@ -46,10 +47,11 @@ class TaskModel {
     required this.subtasks,
     required this.id,
     required this.durationMinutes,
-    
+    this.focusSessions = 0,
     this.isCompleted = false,
     this.completedAt,
     this.actualTimeSpentMinutes = 0,
+    this.focusSoundId,
   });
 
   TaskModel copyWith({
@@ -65,6 +67,8 @@ class TaskModel {
     int? durationMinutes,
     bool? isCompleted,
     DateTime? completedAt,
+    int? focusSessions,
+    String? focusSoundId,
   }) {
     return TaskModel(
       title: title ?? this.title,
@@ -74,11 +78,14 @@ class TaskModel {
       dueDate: dueDate ?? this.dueDate,
       reminder: reminder ?? this.reminder,
       subtasks: subtasks ?? this.subtasks,
-      actualTimeSpentMinutes: actualTimeSpentMinutes ?? this.actualTimeSpentMinutes,
+      actualTimeSpentMinutes:
+          actualTimeSpentMinutes ?? this.actualTimeSpentMinutes,
       id: id ?? this.id,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
+      focusSessions: focusSessions ?? this.focusSessions,
+      focusSoundId: focusSoundId ?? this.focusSoundId,
     );
   }
 
@@ -93,10 +100,12 @@ class TaskModel {
       'reminderHour': reminder.hour,
       'reminderMinute': reminder.minute,
       'subtasks': subtasks,
-      'actualTimeSpentMinutes': actualTimeSpentMinutes ,
+      'actualTimeSpentMinutes': actualTimeSpentMinutes,
       'durationMinutes': durationMinutes,
       'isCompleted': isCompleted,
       'completedAt': completedAt?.toIso8601String(),
+      'focusSessions': focusSessions,
+      'focusSoundId': focusSoundId,
     };
   }
 
@@ -116,9 +125,12 @@ class TaskModel {
       durationMinutes: map['durationMinutes'],
       actualTimeSpentMinutes: map['actualTimeSpentMinutes'] ?? 0,
       isCompleted: map['isCompleted'],
+      focusSessions: map['focusSessions'] ?? 0,
+      focusSoundId: map['focusSoundId'],
+
       completedAt: map['completedAt'] != null
-    ? DateTime.parse(map['completedAt'])
-    : null,
+          ? DateTime.parse(map['completedAt'])
+          : null,
     );
   }
 }

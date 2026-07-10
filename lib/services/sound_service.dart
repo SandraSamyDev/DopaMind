@@ -1,23 +1,27 @@
-
-
 import 'package:audioplayers/audioplayers.dart';
 
 class SoundService {
+  final AudioPlayer player = AudioPlayer();
 
-final player = AudioPlayer();
+  Future<void> startSound(String path) async {
+    await player.setReleaseMode(ReleaseMode.loop);
 
-void startSound(url) async{
+    await player.play(AssetSource(path));
+  }
 
-await player.play(DeviceFileSource(url));
-}
-void pauseSound() async{
+  Future<void> pauseSound() async {
+    await player.pause();
+  }
 
-  await player.pause();
-}
-void resumeSound() async{
+  Future<void> resumeSound() async {
     await player.resume();
-}
-void stopSound() async{
+  }
+
+  Future<void> stopSound() async {
     await player.stop();
-}
+  }
+
+  Future<void> setVolume(double volume) async {
+    await player.setVolume(volume);
+  }
 }

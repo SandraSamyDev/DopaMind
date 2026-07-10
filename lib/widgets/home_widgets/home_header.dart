@@ -18,7 +18,7 @@ class HomeHeader extends StatelessWidget {
           children: [
             const CircleAvatar(
               radius: 23,
-              backgroundImage: AssetImage('lib/assets/images/logo2.jpeg'),
+              backgroundImage: AssetImage('assets/images/logo2.jpeg'),
             ),
             const SizedBox(width: 8),
             const Text(

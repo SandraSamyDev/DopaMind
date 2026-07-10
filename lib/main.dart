@@ -51,7 +51,7 @@ void onBlockScreenRequested() {
               // Dismiss button
               ElevatedButton(
                 onPressed: ()async{
-                                    context.onDismiss();
+                  context.onDismiss();
 
                 },
                 child: const Text('Exit'),

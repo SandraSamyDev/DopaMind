@@ -5,6 +5,9 @@ import 'package:zo_app_blocker/zo_app_blocker.dart';
 import '../../models/task_model.dart';
 import '../../core/app_colors.dart';
 import '../providers/task_provider.dart';
+import '../services/sound_service.dart';
+import '../widgets/focus_sound_selector.dart';
+import '../services/focus_sounds.dart';
 
 enum FocusState { idle, working, paused, breaking }
 
@@ -22,7 +25,8 @@ class _FocusScreenState extends State<FocusScreen> {
   late int _secondsLeft;
   Timer? _timer;
   DateTime? _endTime;
-
+  String? selectedSoundId;
+  final SoundService _soundService = SoundService();
   // 🧠 Hardcoded test target apps (can be dynamically populated from HomeScreen later)
   final List<String> _appsToLockdown = [
     'com.instagram.android',
@@ -33,6 +37,8 @@ class _FocusScreenState extends State<FocusScreen> {
   @override
   void initState() {
     super.initState();
+    selectedSoundId = widget.task.focusSoundId;
+
     _resetSessionState();
   }
 
@@ -44,7 +50,9 @@ class _FocusScreenState extends State<FocusScreen> {
 
   void _resetSessionState() {
     _timer?.cancel();
-    int minutes = (widget.task.durationMinutes > 0) ? widget.task.durationMinutes : 25;
+    int minutes = (widget.task.durationMinutes > 0)
+        ? widget.task.durationMinutes
+        : 25;
     setState(() {
       _totalSeconds = minutes * 60;
       _secondsLeft = _totalSeconds;
@@ -55,13 +63,14 @@ class _FocusScreenState extends State<FocusScreen> {
   // 🧠 Sequentially verify all native hardware/OS permissions
   Future<bool> _ensureAndroidPermissionsReady() async {
     // 1. Notification Rights (Android 13+)
-    final notifyStatus = await ZoAppBlocker.instance.checkNotificationPermission();
+    final notifyStatus = await ZoAppBlocker.instance
+        .checkNotificationPermission();
     if (notifyStatus != 'granted') {
       await ZoAppBlocker.instance.requestNotificationPermission();
       return false;
     }
 
-    // 2. Usage Stats Access 
+    // 2. Usage Stats Access
     final usageStatus = await ZoAppBlocker.instance.checkUsageStatsPermission();
     if (usageStatus == 'denied') {
       await ZoAppBlocker.instance.requestUsageStatsPermission();
@@ -82,13 +91,18 @@ class _FocusScreenState extends State<FocusScreen> {
     final permissionsGranted = await _ensureAndroidPermissionsReady();
     if (!permissionsGranted) {
       // Safety halt: The native OS has open settings views on top of the app.
-      return; 
+      return;
     }
+    if (selectedSoundId != null) {
+      final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
 
+      await _soundService.startSound(sound.assetPath);
+    }
     // Configure persistent foreground service notification banner asset
     await ZoAppBlocker.instance.setNotificationConfig(
       notificationBannerTitle: 'Focus Mode Active',
-      notificationBannerDescription: 'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
+      notificationBannerDescription:
+          'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
     );
 
     // Engage the headless device lock restrictions
@@ -121,18 +135,20 @@ class _FocusScreenState extends State<FocusScreen> {
 
   void _togglePauseResume() async {
     if (_currentState == FocusState.working) {
+      await _soundService.pauseSound();
       _timer?.cancel();
-      
+
       // Lift blocking mechanisms during temporary pause intervals
       await ZoAppBlocker.instance.unblockAll();
-      
+
       setState(() {
         _currentState = FocusState.paused;
       });
     } else if (_currentState == FocusState.paused) {
+      await _soundService.resumeSound();
       // Re-engage native engine blocks
       await ZoAppBlocker.instance.blockApps(_appsToLockdown);
-      
+
       setState(() {
         _currentState = FocusState.working;
       });
@@ -141,21 +157,25 @@ class _FocusScreenState extends State<FocusScreen> {
   }
 
   void _handleTimerCompletion() async {
+    await _soundService.stopSound();
     // Lift native blocks completely before transitioning views
     await ZoAppBlocker.instance.unblockAll();
 
     if (_currentState == FocusState.working) {
       int minutesEarned = _totalSeconds ~/ 60;
       if (!mounted) return;
-      
+
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-      final updatedTask = widget.task.copyWith(
-        actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes + minutesEarned,
-        isCompleted: true,
-        completedAt: DateTime.now(),
-      );
-      taskProvider.updateTask(updatedTask);
-      
+      if (widget.task.id != "default") {
+        final updatedTask = widget.task.copyWith(
+          actualTimeSpentMinutes:
+              widget.task.actualTimeSpentMinutes + minutesEarned,
+          focusSessions: widget.task.focusSessions + 1,
+        );
+
+        await taskProvider.updateTask(updatedTask);
+      }
+
       setState(() {
         _currentState = FocusState.breaking;
         _totalSeconds = 5 * 60;
@@ -190,19 +210,27 @@ class _FocusScreenState extends State<FocusScreen> {
             onPressed: () async {
               Navigator.pop(context);
               _timer?.cancel();
-              
+              await _soundService.stopSound();
+
               // Lift constraints cleanly on structural drop metrics
               await ZoAppBlocker.instance.unblockAll();
-              
+
               int elapsedSeconds = _totalSeconds - _secondsLeft;
               int minutesEarned = elapsedSeconds ~/ 60;
 
               if (minutesEarned > 0) {
-                final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                final updatedTask = widget.task.copyWith(
-                  actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes + minutesEarned,
+                final taskProvider = Provider.of<TaskProvider>(
+                  context,
+                  listen: false,
                 );
-                taskProvider.updateTask(updatedTask);
+                if (widget.task.id != "default") {
+                  final updatedTask = widget.task.copyWith(
+                    actualTimeSpentMinutes:
+                        widget.task.actualTimeSpentMinutes + minutesEarned,
+                  );
+
+                  await taskProvider.updateTask(updatedTask);
+                }
               }
               _resetSessionState();
             },
@@ -241,26 +269,32 @@ class _FocusScreenState extends State<FocusScreen> {
     String statusLabel = _currentState == FocusState.working
         ? "DEEP WORK"
         : (_currentState == FocusState.breaking ? "REST BREAK" : "READY");
-    Color ringColor = _currentState == FocusState.breaking ? Colors.green : AppColors.primary;
+    Color ringColor = _currentState == FocusState.breaking
+        ? Colors.green
+        : AppColors.primary;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.task.title.isEmpty ? "General Focus Session" : widget.task.title,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                widget.task.title.isEmpty
+                    ? "General Focus Session"
+                    : widget.task.title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Stack(
                 alignment: Alignment.center,
                 children: [
                   SizedBox(
-                    width: 220,
-                    height: 220,
+                    width: 190,
+                    height: 190,
                     child: CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 8,
@@ -273,16 +307,47 @@ class _FocusScreenState extends State<FocusScreen> {
                     children: [
                       Text(
                         _formatTime(_secondsLeft),
-                        style: const TextStyle(fontSize: 44, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 44,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         statusLabel,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, letterSpacing: 1.5),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
+              const SizedBox(height: 30),
+
+              if (_currentState == FocusState.idle)
+                Column(
+                  children: [
+                    const Text(
+                      "🎧 Focus Sound",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    FocusSoundSelector(
+                      selectedSoundId: selectedSoundId,
+                      onSelected: (value) {
+                        setState(() {
+                          selectedSoundId = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 20),
+              if (_currentState != FocusState.idle) const Spacer(),
               Column(
                 children: [
                   if (_currentState == FocusState.idle)
@@ -300,7 +365,8 @@ class _FocusScreenState extends State<FocusScreen> {
                         ),
                       ),
                     ),
-                  if (_currentState == FocusState.working || _currentState == FocusState.paused) ...[
+                  if (_currentState == FocusState.working ||
+                      _currentState == FocusState.paused) ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -310,7 +376,9 @@ class _FocusScreenState extends State<FocusScreen> {
                         ),
                         onPressed: _togglePauseResume,
                         child: Text(
-                          _currentState == FocusState.paused ? "Resume Work" : "Pause Focus",
+                          _currentState == FocusState.paused
+                              ? "Resume Work"
+                              : "Pause Focus",
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
