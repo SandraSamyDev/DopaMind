@@ -39,12 +39,18 @@ class TaskService {
   //   await taskRef.doc(task.id).update(task.toMap());
   // }
   Future<void> updateTask(TaskModel task) async {
-    print("Updating Firestore...");
-    print(task.toMap());
+    if (kDebugMode) {
+      print("Updating Firestore...");
+    }
+    if (kDebugMode) {
+      print(task.toMap());
+    }
 
     await taskRef.doc(task.id).update(task.toMap());
 
-    print("Firestore updated");
+    if (kDebugMode) {
+      print("Firestore updated");
+    }
   }
 
   Future<void> deleteTask(String id) async {

@@ -157,7 +157,7 @@ class _TasksScreenState extends State<TasksScreen> {
 
                   onDismissed: (_) async {
                     await context.read<TaskProvider>().deleteTask(task.id);
-
+if(!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Task deleted")),
                     );

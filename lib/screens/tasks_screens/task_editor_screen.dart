@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import '../../providers/task_provider.dart';
 // import '../../../services/gemini_service.dart';
 import '../../../services/task_generator.dart';
-import '../../widgets/focus_sound_selector.dart';
 
 class TaskEditorScreen extends StatefulWidget {
   final TaskModel task;
