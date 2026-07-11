@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 class AuthService {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   User? get currentUser => firebaseAuth.currentUser;
@@ -24,12 +25,8 @@ class AuthService {
         serverClientId:
             '616774633841-8887dqvflq1l53htc6pe1c4n0f7bgtqv.apps.googleusercontent.com',
       );
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
-
-      if (googleUser == null) {
-        return null;
-      }
 
       await Future.delayed(Duration.zero);
 
@@ -76,6 +73,7 @@ class AuthService {
         {
           "name": username,
           "email": email,
+          "photoUrl": "",
           "createdAt": FieldValue.serverTimestamp(),
         },
       );

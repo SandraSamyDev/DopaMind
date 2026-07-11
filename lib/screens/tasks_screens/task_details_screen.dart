@@ -12,7 +12,6 @@ import '../../widgets/tasks_widgets/task_button.dart';
 import 'package:provider/provider.dart';
 import '../../providers/task_provider.dart';
 import '../focus_screen.dart';
-import '../panic_screens/panic_focus_screen.dart';
 import '../panic_screens/panic_setup_screen.dart';
 
 class TaskDetailsScreen extends StatefulWidget {

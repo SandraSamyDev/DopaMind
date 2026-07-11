@@ -64,43 +64,67 @@ class BlockerService {
     }
   }
 
-  // Future<void> removeFromBlacklist(String packageName) async {
-  //   _selectedPackages.remove(packageName);
+  Future<void> removeFromBlacklist(String packageName) async {
+    _selectedPackages.remove(packageName);
 
-  //   final prefs = await SharedPreferences.getInstance();
-  //   await prefs.setStringList('blocked_packages', _selectedPackages);
-  // }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('blocked_packages', _selectedPackages);
+  }
 
-  // Future<List<dynamic>> showAppsList() async {
-  //   return await ZoAppBlocker.instance.getInstalledApps();
-  // }
 
-  // Future<void> handleNotificationPermission() async {
-  //   final status = await ZoAppBlocker.instance.checkNotificationPermission();
+  Future<bool> _ensureAndroidPermissionsReady() async {
 
-  //   if (status != 'granted') {
-  //     await ZoAppBlocker.instance.requestNotificationPermission();
-  //   }
-  // }
+  if (await ZoAppBlocker.instance.checkNotificationPermission() != 'granted') {
+    await ZoAppBlocker.instance.requestNotificationPermission();
+    return false; // Stop here so they can accept notifications first
+  }
 
-  // Future<void> handleUsageStatsandOverlay() async {
-  //   final usage = await ZoAppBlocker.instance.checkUsageStatsPermission();
 
-  //   if (usage == 'denied') {
-  //     await ZoAppBlocker.instance.requestUsageStatsPermission();
-  //   }
+  if (await ZoAppBlocker.instance.checkUsageStatsPermission() == 'denied') {
+    await ZoAppBlocker.instance.requestUsageStatsPermission();
+    return false; // Stop here so they can turn on Usage access
+  }
 
-  //   final overlay = await ZoAppBlocker.instance.checkOverlayPermission();
 
-  //   if (overlay == 'denied') {
-  //     await ZoAppBlocker.instance.requestOverlayPermission();
-  //   }
-  // }
+  if (await ZoAppBlocker.instance.checkOverlayPermission() == 'denied') {
+    await ZoAppBlocker.instance.requestOverlayPermission();
+    return false;
+  }
 
-  // Future<void> configureBackgroundNotification() async {
-  //   await ZoAppBlocker.instance.setNotificationConfig(
-  //     notificationBannerTitle: 'Panic Mode Active',
-  //     notificationBannerDescription: 'Emergency focus session is running',
-  //   );
-  // }
+
+  final finalNotify = await ZoAppBlocker.instance.checkNotificationPermission();
+  final finalUsage = await ZoAppBlocker.instance.checkUsageStatsPermission();
+  final finalOverlay = await ZoAppBlocker.instance.checkOverlayPermission();
+
+  return finalNotify == 'granted' && finalUsage != 'denied' && finalOverlay != 'denied';
+}
+
+  Future<void> handleNotificationPermission() async {
+    final status = await ZoAppBlocker.instance.checkNotificationPermission();
+
+    if (status != 'granted') {
+      await ZoAppBlocker.instance.requestNotificationPermission();
+    }
+  }
+
+  Future<void> handleUsageStatsandOverlay() async {
+    final usage = await ZoAppBlocker.instance.checkUsageStatsPermission();
+
+    if (usage == 'denied') {
+      await ZoAppBlocker.instance.requestUsageStatsPermission();
+    }
+
+    final overlay = await ZoAppBlocker.instance.checkOverlayPermission();
+
+    if (overlay == 'denied') {
+      await ZoAppBlocker.instance.requestOverlayPermission();
+    }
+  }
+
+  Future<void> configureBackgroundNotification() async {
+    await ZoAppBlocker.instance.setNotificationConfig(
+      notificationBannerTitle: 'Panic Mode Active',
+      notificationBannerDescription: 'Emergency focus session is running',
+    );
+  }
 }

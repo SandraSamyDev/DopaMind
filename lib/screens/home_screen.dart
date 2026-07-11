@@ -1,21 +1,19 @@
-import 'package:dopamind/services/block_service.dart';
 import 'package:dopamind/core/app_colors.dart';
 import 'package:dopamind/models/task_model.dart';
 import 'package:dopamind/screens/tasks_screens/task_editor_screen.dart';
+import 'package:dopamind/services/block_service.dart';
 import 'package:dopamind/widgets/custom_button.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zo_app_blocker/zo_app_blocker.dart';
 import '../providers/task_provider.dart';
 
-// Import local sub-widgets
 import '../widgets/home_widgets/home_header.dart';
 import '../widgets/home_widgets/home_sos_card.dart';
 import '../widgets/home_widgets/home_task_list.dart';
 import '../widgets/progress_card.dart';
 
-// Import other main screens
 import 'analytics_screen.dart';
 import 'focus_screen.dart';
 import 'auth_screens/profile_screen.dart';
@@ -31,8 +29,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   TaskModel? _activeFocusTask;
-List<String> _selectedPackagesToBlock = [];
-bool _isLockdownCurrentlyActive = false;
+  final BlockerService _blockerService = BlockerService();
+  final List<String> _selectedPackagesToBlock = [];
+  final bool _isLockdownCurrentlyActive = false;
   @override
   void initState() {
     super.initState();
@@ -40,104 +39,142 @@ bool _isLockdownCurrentlyActive = false;
       if (!mounted) return;
       context.read<TaskProvider>().listenToTasks();
     });
+    _initBlockerService();
   }
 
- void _showAppSelectionBottomSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return FutureBuilder<List<Map<String, dynamic>>>(
-        future: ZoAppBlocker.instance.getApps(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 300,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
+  Future<void> _initBlockerService() async {
+    await _blockerService.init();
+    if (mounted) setState(() {});
+  }
 
-          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-            return const SizedBox(
-              height: 200,
-              child: Center(child: Text("Could not retrieve installed applications.")),
-            );
-          }
+  void _showAppSelectionBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          // Note: Kept your original direct call to getApps(), but you could also
+          // wrap this inside BlockerService for cleaner architecture later.
+          future: ZoAppBlocker.instance.getApps(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 300,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-          final installedApps = snapshot.data!
-            ..sort((a, b) => (a["appName"] ?? "").toString().compareTo((b["appName"] ?? "").toString()));
-
-          return StatefulBuilder(
-            builder: (context, setModalState) {
-              return Container(
-                padding: const EdgeInsets.all(16),
-                height: MediaQuery.of(context).size.height * 0.75,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          // 🧠 Update counter directly from your array length
-                          "Select Apps to Block (${_selectedPackagesToBlock.length})",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Done"),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: installedApps.length,
-                        itemBuilder: (context, index) {
-                          final app = installedApps[index];
-                          final String packageName = app["packageName"] ?? "";
-                          final String appName = app["appName"] ?? "Unknown App";
-
-                          // Check selection locally against our standard tracking list
-                          final isChecked = _selectedPackagesToBlock.contains(packageName);
-
-                          return CheckboxListTile(
-                            title: Text(appName),
-                            subtitle: Text(
-                              packageName,
-                              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                            ),
-                            value: isChecked,
-                            activeColor: AppColors.primary,
-                            onChanged: (bool? checked) async {
-                              setModalState(() {
-                                if (checked == true) {
-                                  _selectedPackagesToBlock.add(packageName);
-                                } else {
-                                  _selectedPackagesToBlock.remove(packageName);
-                                }
-                              });
-                              
-                              // Force update your primary main home screen metrics layout
-                              setState(() {});
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+            if (snapshot.hasError ||
+                !snapshot.hasData ||
+                snapshot.data!.isEmpty) {
+              return const SizedBox(
+                height: 200,
+                child: Center(
+                  child: Text("Could not retrieve installed applications."),
                 ),
               );
-            },
-          );
-        },
-      );
-    },
-  );
-}
+            }
+
+            final installedApps = snapshot.data!
+              ..sort(
+                (a, b) => (a["appName"] ?? "").toString().compareTo(
+                  (b["appName"] ?? "").toString(),
+                ),
+              );
+
+            return StatefulBuilder(
+              builder: (context, setModalState) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  height: MediaQuery.of(context).size.height * 0.75,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            // 🟢 Read directly from the centralized service
+                            "Select Apps to Block (${_blockerService.blockedAppsCount})",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Done"),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: installedApps.length,
+                          itemBuilder: (context, index) {
+                            final app = installedApps[index];
+                            final String packageName = app["packageName"] ?? "";
+                            final String appName =
+                                app["appName"] ?? "Unknown App";
+
+                            //  Match against the persistent list
+                            final isChecked = _blockerService.isPackageSelected(
+                              packageName,
+                            );
+
+                            return CheckboxListTile(
+                              title: Text(appName),
+                              subtitle: Text(
+                                packageName,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                              value: isChecked,
+                              activeColor: AppColors.primary,
+                              onChanged: (bool? checked) async {
+                                // Clone current list to safely update it via our service method
+                                List<String> updatedList = List.from(
+                                  _blockerService.selectedPackages,
+                                );
+
+                                if (checked == true) {
+                                  if (!updatedList.contains(packageName)) {
+                                    updatedList.add(packageName);
+                                  }
+                                } else {
+                                  updatedList.remove(packageName);
+                                }
+
+                                //  Persist changes immediately to SharedPreferences via service
+                                await _blockerService.updateSelectedPackages(
+                                  updatedList,
+                                );
+
+                                // Refresh bottom sheet scope local UI
+                                setModalState(() {});
+
+                                // Refresh top level screen metrics UI
+                                if (mounted) setState(() {});
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 
   // A simple dialog or sheet to let users pick their global distractions
   void showGlobalAppPicker(BuildContext context) async {
@@ -177,6 +214,7 @@ bool _isLockdownCurrentlyActive = false;
   }
 
   void startFocusSession(TaskModel targetTask) {
+
     setState(() {
       _activeFocusTask = targetTask;
       _currentIndex = 1; // Switches to Focus Tab view index
@@ -209,14 +247,6 @@ bool _isLockdownCurrentlyActive = false;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            onPressed: () async => await FirebaseAuth.instance.signOut(),
-            icon: const Icon(Icons.exit_to_app),
-          ),
-        ],
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -227,7 +257,7 @@ bool _isLockdownCurrentlyActive = false;
 
           const TasksScreen(),
           const AnalyticsScreen(),
-          const ProfileScreen(),
+          ProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -255,6 +285,8 @@ bool _isLockdownCurrentlyActive = false;
   }
 
   Widget _buildHomeContent(List tasks, int doneCount, TaskModel fallbackTask) {
+    final int dynamicAppsCount = _blockerService.blockedAppsCount;
+    final bool dynamicLockdownActive = _blockerService.isLockdownActive;
     return SafeArea(
       child: SingleChildScrollView(
         child: Padding(
@@ -309,26 +341,29 @@ bool _isLockdownCurrentlyActive = false;
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-  child: CustomButton(
-    text: "Block Settings (${_selectedPackagesToBlock.length})",
-    icon: Icons.app_blocking,
-    backgroundColor: _isLockdownCurrentlyActive
-        ? Colors.grey.shade200
-        : Colors.grey.shade300,
-    textColor: _isLockdownCurrentlyActive
-        ? Colors.grey.shade400
-        : AppColors.primary,
-    onPressed: _isLockdownCurrentlyActive
-        ? () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Cannot modify blocked apps while a session is running!"),
-              ),
-            );
-          }
-        : () => _showAppSelectionBottomSheet(context),
-  ),
-),
+                    child: CustomButton(
+                      text:
+                          "Block Settings ($dynamicAppsCount)",
+                      icon: Icons.app_blocking,
+                      backgroundColor: _isLockdownCurrentlyActive
+                          ? Colors.grey.shade200
+                          : Colors.grey.shade300,
+                      textColor: _isLockdownCurrentlyActive
+                          ? Colors.grey.shade400
+                          : AppColors.primary,
+                      onPressed: _isLockdownCurrentlyActive
+                          ? () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Cannot modify blocked apps while a session is running!",
+                                  ),
+                                ),
+                              );
+                            }
+                          : () => _showAppSelectionBottomSheet(context),
+                    ),
+                  ),
                 ],
               ),
               const HomeSosCard(),

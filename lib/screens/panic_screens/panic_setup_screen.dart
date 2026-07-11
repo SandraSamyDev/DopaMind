@@ -1,5 +1,4 @@
 import 'package:dopamind/services/block_service.dart';
-import 'package:dopamind/widgets/app_blocker_widget/app_selection_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
 import 'panic_focus_screen.dart';
@@ -130,7 +129,7 @@ class _PanicSetupScreenState extends State<PanicSetupScreen> {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(.05),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

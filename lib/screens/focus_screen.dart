@@ -45,6 +45,8 @@ class _FocusScreenState extends State<FocusScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _soundService.stopSound();
+    ZoAppBlocker.instance.unblockAll();
     super.dispose();
   }
 
@@ -60,7 +62,7 @@ class _FocusScreenState extends State<FocusScreen> {
     });
   }
 
-  // 🧠 Sequentially verify all native hardware/OS permissions
+  //  Sequentially verify all native hardware/OS permissions
   Future<bool> _ensureAndroidPermissionsReady() async {
     // 1. Notification Rights (Android 13+)
     final notifyStatus = await ZoAppBlocker.instance
@@ -87,18 +89,27 @@ class _FocusScreenState extends State<FocusScreen> {
     return true;
   }
 
-  void _startFocusSession() async {
-    final permissionsGranted = await _ensureAndroidPermissionsReady();
-    if (!permissionsGranted) {
-      // Safety halt: The native OS has open settings views on top of the app.
-      return;
-    }
-    if (selectedSoundId != null) {
-      final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+void _startFocusSession() async {
+  // 1. Verify all three native permissions are fully active
+  final permissionsGranted = await _ensureAndroidPermissionsReady();
+  if (!permissionsGranted) {
+    // Safety halt: The native OS has open settings views on top of our app.
+    return;
+  }
 
-      await _soundService.startSound(sound.assetPath);
-    }
-    // Configure persistent foreground service notification banner asset
+  // 2. Fire up background audio if selected
+  if (selectedSoundId != null) {
+    final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+    await _soundService.startSound(sound.assetPath);
+  }
+
+  // 3. UI Optimistic Update: Transition state instantly for snappy performance
+  setState(() {
+    _currentState = FocusState.working;
+  });
+
+  // 4. Safely initialize native foreground service and application restriction hooks
+  try {
     await ZoAppBlocker.instance.setNotificationConfig(
       notificationBannerTitle: 'Focus Mode Active',
       notificationBannerDescription:
@@ -107,13 +118,14 @@ class _FocusScreenState extends State<FocusScreen> {
 
     // Engage the headless device lock restrictions
     await ZoAppBlocker.instance.blockApps(_appsToLockdown);
-
-    setState(() {
-      _currentState = FocusState.working;
-    });
-
-    _startCountdownTicker();
+  } catch (e) {
+    debugPrint("Native App Blocker Service failed to initialize: $e");
+    // Handle gracefully (e.g., show a quick snackbar to the user)
   }
+
+  // 5. Kick off the synchronized time ticker
+  _startCountdownTicker();
+}
 
   void _startCountdownTicker() {
     _timer?.cancel();
@@ -219,6 +231,7 @@ class _FocusScreenState extends State<FocusScreen> {
               int minutesEarned = elapsedSeconds ~/ 60;
 
               if (minutesEarned > 0) {
+                if (!context.mounted) return;
                 final taskProvider = Provider.of<TaskProvider>(
                   context,
                   listen: false,
@@ -228,8 +241,9 @@ class _FocusScreenState extends State<FocusScreen> {
                     actualTimeSpentMinutes:
                         widget.task.actualTimeSpentMinutes + minutesEarned,
                   );
-
+                  final navigator = Navigator.of(context);
                   await taskProvider.updateTask(updatedTask);
+                  navigator.pop();
                 }
               }
               _resetSessionState();
@@ -278,131 +292,134 @@ class _FocusScreenState extends State<FocusScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-          child: Column(
-            children: [
-              Text(
-                widget.task.title.isEmpty
-                    ? "General Focus Session"
-                    : widget.task.title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 190,
-                    height: 190,
-                    child: CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 8,
-                      backgroundColor: Colors.grey.shade300,
-                      valueColor: AlwaysStoppedAnimation<Color>(ringColor),
-                    ),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Text(
+                  widget.task.title.isEmpty
+                      ? "General Focus Session"
+                      : widget.task.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatTime(_secondsLeft),
-                        style: const TextStyle(
-                          fontSize: 44,
-                          fontWeight: FontWeight.bold,
-                        ),
+                ),
+                SizedBox(height: 20),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 190,
+                      height: 190,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 8,
+                        backgroundColor: Colors.grey.shade300,
+                        valueColor: AlwaysStoppedAnimation<Color>(ringColor),
                       ),
-                      Text(
-                        statusLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                          letterSpacing: 1.5,
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatTime(_secondsLeft),
+                          style: const TextStyle(
+                            fontSize: 44,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+
+                if (_currentState == FocusState.idle)
+                  Column(
+                    children: [
+                      const Text(
+                        "🎧 Focus Sound",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      FocusSoundSelector(
+                        selectedSoundId: selectedSoundId,
+                        onSelected: (value) {
+                          setState(() {
+                            selectedSoundId = value;
+                          });
+                        },
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 30),
-
-              if (_currentState == FocusState.idle)
+                const SizedBox(height: 20),
+                if (_currentState != FocusState.idle) SizedBox(height: 40),
                 Column(
                   children: [
-                    const Text(
-                      "🎧 Focus Sound",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    FocusSoundSelector(
-                      selectedSoundId: selectedSoundId,
-                      onSelected: (value) {
-                        setState(() {
-                          selectedSoundId = value;
-                        });
-                      },
-                    ),
+                    if (_currentState == FocusState.idle)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _startFocusSession,
+                          child: const Text(
+                            "Start Focus Now",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    if (_currentState == FocusState.working ||
+                        _currentState == FocusState.paused) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _togglePauseResume,
+                          child: Text(
+                            _currentState == FocusState.paused
+                                ? "Resume Work"
+                                : "Pause Focus",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_currentState != FocusState.idle)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _quitSessionConfirm,
+                          child: const Text(
+                            "Quit Session",
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-              const SizedBox(height: 20),
-              if (_currentState != FocusState.idle) const Spacer(),
-              Column(
-                children: [
-                  if (_currentState == FocusState.idle)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _startFocusSession,
-                        child: const Text(
-                          "Start Focus Now",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  if (_currentState == FocusState.working ||
-                      _currentState == FocusState.paused) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _togglePauseResume,
-                        child: Text(
-                          _currentState == FocusState.paused
-                              ? "Resume Work"
-                              : "Pause Focus",
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (_currentState != FocusState.idle)
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _quitSessionConfirm,
-                        child: const Text(
-                          "Quit Session",
-                          style: TextStyle(color: Colors.redAccent),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
