@@ -4,6 +4,7 @@ import 'package:dopamind/screens/auth_screens/signup_screen.dart';
 import 'package:dopamind/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
 import 'package:zo_app_blocker/zo_app_blocker.dart';
@@ -36,38 +37,32 @@ void main() async {
   );
 }
 
+
 @pragma('vm:entry-point')
 void onBlockScreenRequested() {
   ZoBlockScreenRunner.run(
     builder: (context) {
-      return Scaffold(
-        backgroundColor: Colors.black87,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (context.appIcon != null)
-                Image.memory(context.appIcon!, width: 100, height: 100),
-              const SizedBox(height: 24),
-              Text(
-                '${context.appName ?? 'App'} is Blocked!',
-                style: const TextStyle(color: Colors.white, fontSize: 24),
-              ),
-              const SizedBox(height: 48),
-              // Dismiss button
-              ElevatedButton(
-                onPressed: () async {
-                  context.onDismiss();
-                },
-                child: const Text('Exit'),
-              ),
-              const SizedBox(height: 16),
+      // 1. SAFEGUARD: Get the package name that triggered the block
+      final blockedPackage = context.packageName;
+      
+      // 2. Replace this with YOUR actual Flutter app's package id from AndroidManifest.xml
+      const myAppPackage = 'com.example.dopamind'; 
 
-              // Unlock button for the current session
-            ],
-          ),
-        ),
-      );
+      // If the system claims our own app is blocked, DO NOT close it.
+      if (blockedPackage == myAppPackage) {
+        return const SizedBox.shrink();
+      }
+
+      // 3. Only dismiss if it's a target social media/distracting app
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          context.onDismiss();
+        } catch (e) {
+          debugPrint("Error handling native dismiss execution: $e");
+        }
+      });
+      
+      return const SizedBox.shrink();
     },
   );
 }

@@ -31,11 +31,11 @@ class _FocusScreenState extends State<FocusScreen> {
   DateTime? _endTime;
   String? selectedSoundId;
   final SoundService _soundService = SoundService();
-  // 🧠 Hardcoded test target apps (can be dynamically populated from HomeScreen later)
+
   final List<String> _appsToLockdown = [
     'com.instagram.android',
     'com.facebook.katana',
-    'com.zhiliaoapp.musically', // TikTok
+    'com.zhiliaoapp.musically',
   ];
 
   @override

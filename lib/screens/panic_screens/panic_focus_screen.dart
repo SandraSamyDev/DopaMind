@@ -20,15 +20,15 @@ class PanicFocusScreen extends StatefulWidget {
 }
 
 class _PanicFocusScreenState extends State<PanicFocusScreen> {
+  final BlockerService _blockerService = BlockerService() ;// Singleton reference
   late int remainingSeconds;
-  final BlockerService _blockerService = BlockerService();
   Timer? timer;
   final AudioPlayer _player = AudioPlayer();
+  bool _isServiceInitialized = false;
 
   @override
   void initState() {
     super.initState();
-
     remainingSeconds = widget.totalMinutes * 60;
 
     NotificationService.showPanicNotification(
@@ -37,7 +37,7 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
     );
 
     startTimer();
-    _enforceLockdown();
+    _startEmergencySession();
   }
 
   void startTimer() {
@@ -53,45 +53,75 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
         );
       } else {
         timer.cancel();
-        await NotificationService.cancelPanicNotification();
-        await _blockerService.stopLockdown();
-        await _playAlarm();
-
-        setState(() {});
+        await _handleSessionCompletion();
       }
     });
   }
 
-  Future<void> _enforceLockdown() async {
+  // Orchestrates native configuration, permissions, and app blocking sequence
+  Future<void> _startEmergencySession() async {
     try {
+      // 1. Initialize SharedPreferences data layer
+      await _blockerService.init();
+      setState(() {
+        _isServiceInitialized = true;
+      });
+
+      // 2. Set up the custom foreground banner text
+      await _blockerService.configureBackgroundNotification();
+
+      // 3. Trigger permission handlers
+      await _blockerService.handleNotificationPermission();
+      await _blockerService.handleUsageStatsandOverlay();
+
+      // 4. Force override or seed emergency apps if your blacklist is currently empty
+      if (_blockerService.blockedAppsCount == 0) {
+        await _blockerService.updateSelectedPackages([
+          'com.instagram.android',
+          'com.facebook.katana',
+          'com.zhiliaoapp.musically',
+        ]);
+      }
+
+      // 5. Fire up native background blockers
       await _blockerService.startLockdown();
+      debugPrint("Native emergency lockdown successfully started.");
     } catch (e) {
-      debugPrint("Failed to start app lock: $e");
+      debugPrint("Failed to establish emergency lockdown pipelines: $e");
     }
+  }
+
+  // Handles logic when the timer runs down organically
+  Future<void> _handleSessionCompletion() async {
+    await NotificationService.cancelPanicNotification();
+    await _blockerService.stopLockdown(); // Lift application blocks cleanly
+    
+    // Save data safely inside SharedPreferences
+    await _blockerService.saveFocusSessionData(widget.taskTitle, widget.totalMinutes);
+    
+    await _playAlarm();
+    if (mounted) setState(() {});
   }
 
   String formatTime() {
     final minutes = (remainingSeconds ~/ 60).toString().padLeft(2, '0');
-
     final seconds = (remainingSeconds % 60).toString().padLeft(2, '0');
-
     return "$minutes:$seconds";
   }
 
   Future<void> _playAlarm() async {
     await _player.setReleaseMode(ReleaseMode.loop);
-
     await _player.play(AssetSource("sounds/notifications.mp3"));
   }
 
   @override
   void dispose() {
     timer?.cancel();
-
     NotificationService.cancelPanicNotification();
     _player.dispose();
+    
+    // Safety release: Always stop blocks if the screen is dismissed mid-run
     _blockerService.stopLockdown();
-
     super.dispose();
   }
 
@@ -129,9 +159,7 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
                           size: 42,
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       const Text(
                         "Emergency Focus",
                         style: TextStyle(
@@ -139,9 +167,7 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 8),
-
                       const Text(
                         "Forget everything else.\nOnly this task matters now.",
                         textAlign: TextAlign.center,
@@ -161,7 +187,6 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
                       color: Colors.orange.withValues(alpha: 0.25),
                     ),
                   ),
-
                   child: Text(
                     widget.taskTitle,
                     textAlign: TextAlign.center,
@@ -213,10 +238,16 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
                     onPressed: () async {
                       timer?.cancel();
                       await _player.stop();
-
                       await NotificationService.cancelPanicNotification();
-
+                      
+                      // Stop blocking and log the elapsed minutes into SharedPreferences
                       await _blockerService.stopLockdown();
+                      
+                      // Calculate active duration spent focusing
+                      int minutesCompleted = widget.totalMinutes - (remainingSeconds ~/ 60);
+                      if (minutesCompleted > 0) {
+                        await _blockerService.saveFocusSessionData(widget.taskTitle, minutesCompleted);
+                      }
 
                       if (context.mounted) {
                         Navigator.pop(context);
