@@ -76,7 +76,7 @@ class BlockerService {
 
   if (await ZoAppBlocker.instance.checkNotificationPermission() != 'granted') {
     await ZoAppBlocker.instance.requestNotificationPermission();
-    return false; // Stop here so they can accept notifications first
+    return false;
   }
 
 
