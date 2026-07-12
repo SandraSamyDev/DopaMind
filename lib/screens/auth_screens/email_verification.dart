@@ -149,7 +149,7 @@ if(context.mounted){
      }
     }
   },
-  child: const Text("I've Clicked the Link"),
+  child: const Text("I've Clicked the Link", style: TextStyle(color: Colors.white70),),
 )
             ],
           ),

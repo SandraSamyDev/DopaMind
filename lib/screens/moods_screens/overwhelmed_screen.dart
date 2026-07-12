@@ -63,11 +63,12 @@ class OverwhelmedScreen extends StatelessWidget {
               "Too many tasks",
               "Let's simplify things.",
               const Color(0xff3B82F6),
-              [
+              ["If you only get 26% of a task done, that is still further than if you never started. Doing tiny bits of every task beats freezing up and doing nothing.",
                 "Write everything down.",
                 "Choose ONE task only.",
                 "Ignore the rest for now.",
-                "You can come back later.",
+                "You can come back later."
+
               ],
               "I picked one task",
             ),
@@ -80,7 +81,8 @@ class OverwhelmedScreen extends StatelessWidget {
               "Everything feels urgent",
               "Let's slow everything down.",
               const Color(0xffF59E0B),
-              [
+              ["Societal pressure makes people think multitasking is the ultimate solution, but it isn't. It is always best to isolate and focus on just one single task.",
+              "It's completely okay to feel confused at first. You will find the exact things that work for you over time.",
                 "Take one deep breath.",
                 "Not everything needs to be done now.",
                 "Choose the single most urgent thing.",
@@ -98,6 +100,8 @@ class OverwhelmedScreen extends StatelessWidget {
               "Starting is harder than doing.",
               const Color(0xff10B981),
               [
+                "The less cluttered your immediate surroundings are, the better. Out of sight, out of mind (cleaning your desk clears a physical path to start).",
+                "Every ADHDer is different; it's okay if some of these strategies don't work for you. (Don't waste energy forcing a starting method that isn't clicking right now).",
                 "Pick the easiest thing.",
                 "Work for only 5 minutes.",
                 "Don't aim for perfect.",
@@ -114,6 +118,8 @@ class OverwhelmedScreen extends StatelessWidget {
               "Let's remove distractions.",
               const Color(0xff6366F1),
               [
+                "Disable every single notification on your phone except for the absolute essentials (e.g., text messages, voicemails, and calendar events).",
+                "Put on a noise-cancelling headset and stream music, white noise, or brown noise to unlock hyperfocus and block the external world out.",
                 "Start a Focus Session.",
                 "Block distracting apps.",
                 "Keep your phone away for 15 minutes.",
