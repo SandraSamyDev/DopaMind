@@ -19,9 +19,15 @@ class HomeTaskList extends StatelessWidget {
         return TaskCard(
           task: task,
           onTap: () async {
-            task.isCompleted = !task.isCompleted;
-            task.completedAt = task.isCompleted ? DateTime.now() : null;
-            
+            final newStatus = !task.isCompleted;
+
+            task.isCompleted = newStatus;
+            task.completedAt = newStatus ? DateTime.now() : null;
+
+            for (var subtask in task.subtasks) {
+              subtask["done"] = newStatus;
+            }
+
             await context.read<TaskProvider>().updateTask(task);
           },
         );

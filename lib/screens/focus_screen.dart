@@ -5,6 +5,13 @@ import 'package:zo_app_blocker/zo_app_blocker.dart';
 import '../../models/task_model.dart';
 import '../../core/app_colors.dart';
 import '../providers/task_provider.dart';
+import '../services/sound_service.dart';
+import '../widgets/focus_sound_selector.dart';
+import '../services/focus_sounds.dart';
+import '../services/notification_service.dart';
+import '../services/focus_notification_service.dart';
+import '../services/focus_foreground_service.dart';
+import '../services/notification_service.dart';
 
 enum FocusState { idle, working, paused, breaking }
 
@@ -22,7 +29,8 @@ class _FocusScreenState extends State<FocusScreen> {
   late int _secondsLeft;
   Timer? _timer;
   DateTime? _endTime;
-
+  String? selectedSoundId;
+  final SoundService _soundService = SoundService();
   // 🧠 Hardcoded test target apps (can be dynamically populated from HomeScreen later)
   final List<String> _appsToLockdown = [
     'com.instagram.android',
@@ -33,18 +41,27 @@ class _FocusScreenState extends State<FocusScreen> {
   @override
   void initState() {
     super.initState();
+    selectedSoundId = widget.task.focusSoundId;
+
     _resetSessionState();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _soundService.stopSound();
+    ZoAppBlocker.instance.unblockAll();
     super.dispose();
   }
 
   void _resetSessionState() {
     _timer?.cancel();
-    int minutes = (widget.task.durationMinutes > 0) ? widget.task.durationMinutes : 25;
+    _timer = null;
+
+    int minutes = widget.task.durationMinutes > 0
+        ? widget.task.durationMinutes
+        : 45;
+
     setState(() {
       _totalSeconds = minutes * 60;
       _secondsLeft = _totalSeconds;
@@ -52,16 +69,17 @@ class _FocusScreenState extends State<FocusScreen> {
     });
   }
 
-  // 🧠 Sequentially verify all native hardware/OS permissions
+  //  Sequentially verify all native hardware/OS permissions
   Future<bool> _ensureAndroidPermissionsReady() async {
     // 1. Notification Rights (Android 13+)
-    final notifyStatus = await ZoAppBlocker.instance.checkNotificationPermission();
+    final notifyStatus = await ZoAppBlocker.instance
+        .checkNotificationPermission();
     if (notifyStatus != 'granted') {
       await ZoAppBlocker.instance.requestNotificationPermission();
       return false;
     }
 
-    // 2. Usage Stats Access 
+    // 2. Usage Stats Access
     final usageStatus = await ZoAppBlocker.instance.checkUsageStatsPermission();
     if (usageStatus == 'denied') {
       await ZoAppBlocker.instance.requestUsageStatsPermission();
@@ -79,25 +97,55 @@ class _FocusScreenState extends State<FocusScreen> {
   }
 
   void _startFocusSession() async {
+    // 1. Verify all three native permissions are fully active
     final permissionsGranted = await _ensureAndroidPermissionsReady();
     if (!permissionsGranted) {
-      // Safety halt: The native OS has open settings views on top of the app.
-      return; 
+      // Safety halt: The native OS has open settings views on top of our app.
+      return;
     }
-
-    // Configure persistent foreground service notification banner asset
-    await ZoAppBlocker.instance.setNotificationConfig(
-      notificationBannerTitle: 'Focus Mode Active',
-      notificationBannerDescription: 'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
-    );
-
-    // Engage the headless device lock restrictions
-    await ZoAppBlocker.instance.blockApps(_appsToLockdown);
 
     setState(() {
       _currentState = FocusState.working;
     });
 
+    await FocusForegroundService.start(_secondsLeft);
+
+    // شغل الصوت بعد تشغيل الـ Foreground Service
+    if (selectedSoundId != null) {
+      final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+      if (selectedSoundId != null) {
+        final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+
+        print("STARTING SOUND: ${sound.assetPath}");
+
+        await _soundService.startSound(sound.assetPath);
+
+        print("SOUND STARTED");
+      }
+    }
+
+    await NotificationService.showNotification(
+      id: 1000,
+      title: "Focus Started",
+      body: "Your focus session has begun. Stay focused!",
+    );
+
+    // 4. Safely initialize native foreground service and application restriction hooks
+    try {
+      await ZoAppBlocker.instance.setNotificationConfig(
+        notificationBannerTitle: 'Focus Mode Active',
+        notificationBannerDescription:
+            'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
+      );
+
+      // Engage the headless device lock restrictions
+      await ZoAppBlocker.instance.blockApps(_appsToLockdown);
+    } catch (e) {
+      debugPrint("Native App Blocker Service failed to initialize: $e");
+      // Handle gracefully (e.g., show a quick snackbar to the user)
+    }
+
+    // 5. Kick off the synchronized time ticker
     _startCountdownTicker();
   }
 
@@ -105,13 +153,17 @@ class _FocusScreenState extends State<FocusScreen> {
     _timer?.cancel();
     _endTime = DateTime.now().add(Duration(seconds: _secondsLeft));
 
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       final remaining = _endTime!.difference(DateTime.now()).inSeconds;
 
       if (remaining > 0) {
         setState(() {
           _secondsLeft = remaining;
         });
+        await FocusNotificationService.showRunningNotification(
+          secondsLeft: _secondsLeft,
+          paused: false,
+        );
       } else {
         _timer?.cancel();
         _handleTimerCompletion();
@@ -121,41 +173,64 @@ class _FocusScreenState extends State<FocusScreen> {
 
   void _togglePauseResume() async {
     if (_currentState == FocusState.working) {
+      await _soundService.pauseSound();
       _timer?.cancel();
-      
+
       // Lift blocking mechanisms during temporary pause intervals
       await ZoAppBlocker.instance.unblockAll();
-      
+
       setState(() {
         _currentState = FocusState.paused;
       });
+      await FocusNotificationService.showRunningNotification(
+        secondsLeft: _secondsLeft,
+        paused: true,
+      );
     } else if (_currentState == FocusState.paused) {
+      await _soundService.resumeSound();
       // Re-engage native engine blocks
       await ZoAppBlocker.instance.blockApps(_appsToLockdown);
-      
+
       setState(() {
         _currentState = FocusState.working;
       });
+      await FocusNotificationService.showRunningNotification(
+        secondsLeft: _secondsLeft,
+        paused: false,
+      );
       _startCountdownTicker();
     }
   }
 
   void _handleTimerCompletion() async {
+    await _soundService.stopSound();
+    await _soundService.playCompletionSound();
+    await NotificationService.showTimerFinishedNotification();
+    await FocusForegroundService.stop();
+    await FocusNotificationService.stopNotification();
     // Lift native blocks completely before transitioning views
     await ZoAppBlocker.instance.unblockAll();
+    await NotificationService.showNotification(
+      id: 1001,
+      title: "Focus Session Complete!",
+      body: "Great job! Time for a short break.",
+    );
 
     if (_currentState == FocusState.working) {
       int minutesEarned = _totalSeconds ~/ 60;
       if (!mounted) return;
-      
+
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-      final updatedTask = widget.task.copyWith(
-        actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes + minutesEarned,
-        isCompleted: true,
-        completedAt: DateTime.now(),
-      );
-      taskProvider.updateTask(updatedTask);
-      
+      if (widget.task.id != "default") {
+        final updatedTask = widget.task.copyWith(
+          actualTimeSpentMinutes:
+              widget.task.actualTimeSpentMinutes + minutesEarned,
+          focusSessions: widget.task.focusSessions + 1,
+        );
+
+        await taskProvider.updateTask(updatedTask);
+      }
+
       setState(() {
         _currentState = FocusState.breaking;
         _totalSeconds = 5 * 60;
@@ -182,29 +257,57 @@ class _FocusScreenState extends State<FocusScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            onPressed: () async {
+              await _soundService.stopCompletionSound();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("OK"),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () async {
               Navigator.pop(context);
               _timer?.cancel();
-              
+              await _soundService.stopSound();
+              await _soundService.stopCompletionSound();
+              await FocusForegroundService.stop();
+              await FocusNotificationService.stopNotification();
+
               // Lift constraints cleanly on structural drop metrics
               await ZoAppBlocker.instance.unblockAll();
-              
+
               int elapsedSeconds = _totalSeconds - _secondsLeft;
               int minutesEarned = elapsedSeconds ~/ 60;
 
               if (minutesEarned > 0) {
-                final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-                final updatedTask = widget.task.copyWith(
-                  actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes + minutesEarned,
+                if (!context.mounted) return;
+                final taskProvider = Provider.of<TaskProvider>(
+                  context,
+                  listen: false,
                 );
-                taskProvider.updateTask(updatedTask);
+                if (widget.task.id != "default") {
+                  final updatedTask = widget.task.copyWith(
+                    actualTimeSpentMinutes:
+                        widget.task.actualTimeSpentMinutes + minutesEarned,
+                  );
+                  final navigator = Navigator.of(context);
+                  await taskProvider.updateTask(updatedTask);
+                  navigator.pop();
+                }
               }
-              _resetSessionState();
+              await FocusForegroundService.stop();
+              await FocusNotificationService.stopNotification();
+
+              _timer?.cancel();
+              _timer = null;
+
+              setState(() {
+                _currentState = FocusState.idle;
+                _secondsLeft = _totalSeconds;
+              });
             },
             child: const Text("Quit", style: TextStyle(color: Colors.white)),
           ),
@@ -221,7 +324,13 @@ class _FocusScreenState extends State<FocusScreen> {
         content: Text(body),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              await _soundService.stopCompletionSound();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text("OK"),
           ),
         ],
@@ -241,100 +350,143 @@ class _FocusScreenState extends State<FocusScreen> {
     String statusLabel = _currentState == FocusState.working
         ? "DEEP WORK"
         : (_currentState == FocusState.breaking ? "REST BREAK" : "READY");
-    Color ringColor = _currentState == FocusState.breaking ? Colors.green : AppColors.primary;
+    Color ringColor = _currentState == FocusState.breaking
+        ? Colors.green
+        : AppColors.primary;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.task.title.isEmpty ? "General Focus Session" : widget.task.title,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 220,
-                    height: 220,
-                    child: CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 8,
-                      backgroundColor: Colors.grey.shade300,
-                      valueColor: AlwaysStoppedAnimation<Color>(ringColor),
-                    ),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Text(
+                  widget.task.title.isEmpty
+                      ? "General Focus Session"
+                      : widget.task.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatTime(_secondsLeft),
-                        style: const TextStyle(fontSize: 44, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 20),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 190,
+                      height: 190,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 8,
+                        backgroundColor: Colors.grey.shade300,
+                        valueColor: AlwaysStoppedAnimation<Color>(ringColor),
                       ),
-                      Text(
-                        statusLabel,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, letterSpacing: 1.5),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatTime(_secondsLeft),
+                          style: const TextStyle(
+                            fontSize: 44,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+
+                if (_currentState == FocusState.idle)
+                  Column(
+                    children: [
+                      const Text(
+                        "🎧 Focus Sound",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      FocusSoundSelector(
+                        selectedSoundId: selectedSoundId,
+                        onSelected: (value) {
+                          setState(() {
+                            selectedSoundId = value;
+                          });
+                        },
                       ),
                     ],
                   ),
-                ],
-              ),
-              Column(
-                children: [
-                  if (_currentState == FocusState.idle)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _startFocusSession,
-                        child: const Text(
-                          "Start Focus Now",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  if (_currentState == FocusState.working || _currentState == FocusState.paused) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _togglePauseResume,
-                        child: Text(
-                          _currentState == FocusState.paused ? "Resume Work" : "Pause Focus",
-                          style: const TextStyle(color: Colors.white),
+                const SizedBox(height: 20),
+                if (_currentState != FocusState.idle) SizedBox(height: 40),
+                Column(
+                  children: [
+                    if (_currentState == FocusState.idle)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _startFocusSession,
+                          child: const Text(
+                            "Start Focus Now",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                    if (_currentState == FocusState.working ||
+                        _currentState == FocusState.paused) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _togglePauseResume,
+                          child: Text(
+                            _currentState == FocusState.paused
+                                ? "Resume Work"
+                                : "Pause Focus",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_currentState != FocusState.idle)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _quitSessionConfirm,
+                          child: const Text(
+                            "Quit Session",
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
                   ],
-                  if (_currentState != FocusState.idle)
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: _quitSessionConfirm,
-                        child: const Text(
-                          "Quit Session",
-                          style: TextStyle(color: Colors.redAccent),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

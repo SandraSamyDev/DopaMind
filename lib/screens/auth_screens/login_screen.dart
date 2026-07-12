@@ -80,7 +80,7 @@ super.dispose();
               ),
               child: ClipOval(
                 child: Image.asset(
-                  'lib/assets/images/logo2.jpeg',
+                  'assets/images/logo2.jpeg',
                   fit: BoxFit.cover,
                 ),
               ),
@@ -182,7 +182,7 @@ try {
                      
                       },
                       icon: Image.asset(
-                        "lib/assets/images/google.png",
+                        "assets/images/google.png",
                         height: 22,
                       ),
                       label: const Text("Continue with Google"),
