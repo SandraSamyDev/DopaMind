@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:dopamind/services/block_service.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import 'package:dopamind/services/notification_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class PanicFocusScreen extends StatefulWidget {
   final String taskTitle;
@@ -21,12 +23,18 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
   late int remainingSeconds;
   final BlockerService _blockerService = BlockerService();
   Timer? timer;
+  final AudioPlayer _player = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
 
     remainingSeconds = widget.totalMinutes * 60;
+
+    NotificationService.showPanicNotification(
+      taskTitle: widget.taskTitle,
+      remaining: Duration(seconds: remainingSeconds),
+    );
 
     startTimer();
     _enforceLockdown();
@@ -38,12 +46,18 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
         setState(() {
           remainingSeconds--;
         });
+
+        NotificationService.showPanicNotification(
+          taskTitle: widget.taskTitle,
+          remaining: Duration(seconds: remainingSeconds),
+        );
       } else {
         timer.cancel();
+        await NotificationService.cancelPanicNotification();
         await _blockerService.stopLockdown();
-        if (mounted) {
-          Navigator.pop(context);
-        }
+        await _playAlarm();
+
+        setState(() {});
       }
     });
   }
@@ -64,10 +78,20 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
     return "$minutes:$seconds";
   }
 
+  Future<void> _playAlarm() async {
+    await _player.setReleaseMode(ReleaseMode.loop);
+
+    await _player.play(AssetSource("sounds/notifications.mp3"));
+  }
+
   @override
   void dispose() {
     timer?.cancel();
+
+    NotificationService.cancelPanicNotification();
+    _player.dispose();
     _blockerService.stopLockdown();
+
     super.dispose();
   }
 
@@ -187,7 +211,13 @@ class _PanicFocusScreenState extends State<PanicFocusScreen> {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () async {
+                      timer?.cancel();
+                      await _player.stop();
+
+                      await NotificationService.cancelPanicNotification();
+
                       await _blockerService.stopLockdown();
+
                       if (context.mounted) {
                         Navigator.pop(context);
                       }

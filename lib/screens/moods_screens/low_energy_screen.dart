@@ -64,6 +64,8 @@ class LowEnergyScreen extends StatelessWidget {
               "Your brain needs a gentle reset.",
               const Color(0xff3B82F6),
               [
+                "Change your physical workspace entirely when you're stuck. Punting yourself to a dedicated external spot like a library or cafe cuts down the heavy 'stuck at home' mental friction and boosts output without extra mental effort.",
+                "Body Doubling: Utilize the presence of another person to help anchor your focus so your brain doesn't have to work as hard to stay present.",
                 "Drink a glass of water.",
                 "Stretch for one minute.",
                 "Take three slow breaths.",
@@ -81,6 +83,8 @@ class LowEnergyScreen extends StatelessWidget {
               "Let's lower the pressure.",
               const Color(0xff10B981),
               [
+                "Aim for a garbage run. If you only get 26% of a task done, that is still infinitely further along than if you never started",
+                "Do a quick, dumb blast of cardio (like jumping jacks or dancing to one song) right before you need to sit down",
                 "Forget finishing.",
                 "Work for only 2 minutes.",
                 "Starting is enough.",
@@ -98,6 +102,8 @@ class LowEnergyScreen extends StatelessWidget {
               "Let's boost your dopamine.",
               const Color(0xffEC4899),
               [
+                "Remind yourself that future you is still you. They aren't going to magically possess a massive surge of motivation later. If you don't have the drive to do it within the next 24 hours, future you won't either",
+                "Swap out screen rewards. Gamify the lack of motivation with immediate physical rewards instead, like eating a favorite snack etc... the second you finish a task ",
                 "Play your favorite song.",
                 "Open a sunny window.",
                 "Reward yourself after a small step.",
@@ -115,6 +121,7 @@ class LowEnergyScreen extends StatelessWidget {
               "Be kind to yourself.",
               const Color(0xff8B5CF6),
               [
+                "it's completely okay if the strategies or systems you tried today didn't work for you. It's not a personal failure.",
                 "You're not lazy.",
                 "Your energy changes, and that's okay.",
                 "Doing something small is enough today.",

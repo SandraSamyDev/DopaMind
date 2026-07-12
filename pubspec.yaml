@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_local_notifications: ^19.4.2
+  firebase_messaging: ^16.0.2
+  timezone: ^0.10.1
+  flutter_foreground_task: ^9.1.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -55,7 +60,11 @@ dependencies:
   image_picker: ^1.2.2
   cached_network_image: ^3.4.1
   image: ^4.8.0
-  # app_blocker: any
+  google_generative_ai: ^0.4.7
+  fl_chart: ^1.2.0
+  firebase_ai: ^3.13.1
+  flutter_launcher_icons: ^0.14.4
+
   
 
 dev_dependencies:
@@ -83,6 +92,7 @@ flutter:
     - assets/images/logo2.jpeg
     - assets/images/google.png
     - assets/sounds/
+    - assets/sounds/notification.mp3
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

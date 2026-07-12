@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/task_model.dart';
 import '../services/task_service.dart';
 import 'dart:async';
+import '../services/notification_service.dart';
 
 class TaskProvider extends ChangeNotifier {
   final TaskService _taskService = TaskService();
@@ -24,13 +25,23 @@ class TaskProvider extends ChangeNotifier {
       print("inside provider addTask");
     }
     await _taskService.addTask(task);
+
+    await NotificationService.scheduleTaskNotification(task);
   }
 
   Future<void> updateTask(TaskModel task) async {
     await _taskService.updateTask(task);
+
+    try {
+      await NotificationService.cancelNotification(task.id.hashCode);
+      await NotificationService.scheduleTaskNotification(task);
+    } catch (e) {
+      print("Notification Error: $e");
+    }
   }
 
   Future<void> deleteTask(String id) async {
+    await NotificationService.cancelNotification(id.hashCode);
     await _taskService.deleteTask(id);
   }
 
@@ -52,6 +63,4 @@ class TaskProvider extends ChangeNotifier {
     _tasksSubscription?.cancel();
     notifyListeners();
   }
-
-
 }

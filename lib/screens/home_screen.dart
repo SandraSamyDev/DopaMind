@@ -215,11 +215,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void startFocusSession(TaskModel targetTask) {
 
+    final taskWithDefaultDuration = targetTask.durationMinutes == 0
+        ? targetTask.copyWith(durationMinutes: 45)
+        : targetTask;
+
     setState(() {
-      _activeFocusTask = targetTask;
-      _currentIndex = 1; // Switches to Focus Tab view index
+      _activeFocusTask = taskWithDefaultDuration;
+      _currentIndex = 1;
     });
-  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
         dueDate: DateTime.now(),
         reminder: TimeOfDay.now(),
         subtasks: [],
-        durationMinutes: 25, // Standard requirement
+        durationMinutes: 45, // Standard requirement
         isCompleted: false,
       ),
     );

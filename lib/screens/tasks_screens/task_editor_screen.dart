@@ -30,7 +30,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
   String? selectedFocusSoundId;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
-  int selectedDurationTime = 25;
+  int selectedDurationTime = 0;
 
   List<Map<String, dynamic>> subtasks = [];
   bool isGeneratingAI = false;
@@ -47,7 +47,9 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
     selectedFocusSoundId = widget.task.focusSoundId;
     selectedDate = widget.task.dueDate;
     selectedTime = widget.task.reminder;
-    selectedDurationTime = widget.task.durationMinutes;
+    selectedDurationTime = widget.task.durationMinutes > 0
+        ? widget.task.durationMinutes
+        : 0;
     subtasks = List<Map<String, dynamic>>.from(
       widget.task.subtasks.map((item) => Map<String, dynamic>.from(item)),
     );
@@ -100,7 +102,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
       dueDate: selectedDate ?? DateTime.now(),
       reminder: selectedTime ?? TimeOfDay.now(),
       subtasks: subtasks,
-      durationMinutes: widget.task.durationMinutes,
+      durationMinutes: selectedDurationTime,
       isCompleted: taskCompleted,
       completedAt: widget.task.completedAt,
       actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes,
@@ -115,10 +117,10 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text("Task saved")));
       Navigator.pop(context, updatedTask);
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+    } catch (e, s) {
+      print("SAVE ERROR:");
+      print(e);
+      print(s);
     }
   }
 
@@ -302,20 +304,73 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
+                 onPressed: isGeneratingAI
+                      ? null
+                      : () async {
+                          if (titleController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Please enter a task title first",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
 
-                    final generatedSubtasks = TaskGenerator.generate(
-                      title: titleController.text,
-                      energy: selectedEnergy,
-                      detail: selectedDetail,
-                      durationMinutes: selectedDurationTime,
-                    );
 
-                    setState(() {
-                      subtasks = generatedSubtasks;
-                    });
-                  },
+setModalState(() {
+              isGeneratingAI = true;
+            });
+            setState(() {
+              isGeneratingAI = true;
+            });
+
+                          try {
+                            final fullTaskContext =
+                                descriptionController.text.isNotEmpty
+                                ? "${titleController.text}\nContext/Notes: ${descriptionController.text}"
+                                : titleController.text;
+
+                            final generatedSubtasks =
+                                await TaskGenerator.generate(
+                                  title: fullTaskContext,
+                                  energy: selectedEnergy,
+                                  detail: selectedDetail,
+                                  durationMinutes: selectedDurationTime,
+                                );
+                            if (!mounted) return;
+                            // 2. Safely apply changes back to the root widget
+                            setState(() {
+                              subtasks = List<Map<String, dynamic>>.from(
+                                generatedSubtasks,
+                              );
+                            });
+
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (e, stack) {
+                            if (kDebugMode) {
+                              print("Generation error: $e");
+                              print(stack);
+                            }
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Failed to generate schedule. Try again!",
+                                  ),
+                                ),
+                              );
+                            }
+                          } finally {
+                            // 3. Clear loading spinner execution state
+                            if (mounted) {
+                              setModalState(() => isGeneratingAI = false);
+                              setState(() => isGeneratingAI = false);
+                            }
+                          }
+                        },
+
 
                   child: const Text(
                     "Generate Custom Schedule",
@@ -407,9 +462,9 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
 
   Widget _priorityChip(String value) {
     final isSelected = selectedPriority == value;
-    final colors = selectedPriority == "Low"
+    final colors = value == "Low"
         ? {"bg": const Color(0xFFE8F5E9), "txt": Colors.green}
-        : selectedPriority == "Medium"
+        : value == "Medium"
         ? {"bg": const Color(0xFFFFF3E0), "txt": Colors.orange}
         : {"bg": AppColors.highPriorityBg, "txt": AppColors.highPriorityText};
 

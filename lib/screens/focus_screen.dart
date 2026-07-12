@@ -8,6 +8,10 @@ import '../providers/task_provider.dart';
 import '../services/sound_service.dart';
 import '../widgets/focus_sound_selector.dart';
 import '../services/focus_sounds.dart';
+import '../services/notification_service.dart';
+import '../services/focus_notification_service.dart';
+import '../services/focus_foreground_service.dart';
+import '../services/notification_service.dart';
 
 enum FocusState { idle, working, paused, breaking }
 
@@ -52,9 +56,12 @@ class _FocusScreenState extends State<FocusScreen> {
 
   void _resetSessionState() {
     _timer?.cancel();
-    int minutes = (widget.task.durationMinutes > 0)
+    _timer = null;
+
+    int minutes = widget.task.durationMinutes > 0
         ? widget.task.durationMinutes
-        : 25;
+        : 45;
+
     setState(() {
       _totalSeconds = minutes * 60;
       _secondsLeft = _totalSeconds;
@@ -89,55 +96,74 @@ class _FocusScreenState extends State<FocusScreen> {
     return true;
   }
 
-void _startFocusSession() async {
-  // 1. Verify all three native permissions are fully active
-  final permissionsGranted = await _ensureAndroidPermissionsReady();
-  if (!permissionsGranted) {
-    // Safety halt: The native OS has open settings views on top of our app.
-    return;
-  }
+  void _startFocusSession() async {
+    // 1. Verify all three native permissions are fully active
+    final permissionsGranted = await _ensureAndroidPermissionsReady();
+    if (!permissionsGranted) {
+      // Safety halt: The native OS has open settings views on top of our app.
+      return;
+    }
 
-  // 2. Fire up background audio if selected
-  if (selectedSoundId != null) {
-    final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
-    await _soundService.startSound(sound.assetPath);
-  }
+    setState(() {
+      _currentState = FocusState.working;
+    });
 
-  // 3. UI Optimistic Update: Transition state instantly for snappy performance
-  setState(() {
-    _currentState = FocusState.working;
-  });
+    await FocusForegroundService.start(_secondsLeft);
 
-  // 4. Safely initialize native foreground service and application restriction hooks
-  try {
-    await ZoAppBlocker.instance.setNotificationConfig(
-      notificationBannerTitle: 'Focus Mode Active',
-      notificationBannerDescription:
-          'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
+    // شغل الصوت بعد تشغيل الـ Foreground Service
+    if (selectedSoundId != null) {
+      final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+      if (selectedSoundId != null) {
+        final sound = focusSounds.firstWhere((s) => s.id == selectedSoundId);
+
+        print("STARTING SOUND: ${sound.assetPath}");
+
+        await _soundService.startSound(sound.assetPath);
+
+        print("SOUND STARTED");
+      }
+    }
+
+    await NotificationService.showNotification(
+      id: 1000,
+      title: "Focus Started",
+      body: "Your focus session has begun. Stay focused!",
     );
 
-    // Engage the headless device lock restrictions
-    await ZoAppBlocker.instance.blockApps(_appsToLockdown);
-  } catch (e) {
-    debugPrint("Native App Blocker Service failed to initialize: $e");
-    // Handle gracefully (e.g., show a quick snackbar to the user)
-  }
+    // 4. Safely initialize native foreground service and application restriction hooks
+    try {
+      await ZoAppBlocker.instance.setNotificationConfig(
+        notificationBannerTitle: 'Focus Mode Active',
+        notificationBannerDescription:
+            'Monitoring applications for: ${widget.task.title.isEmpty ? "Deep Work" : widget.task.title}',
+      );
 
-  // 5. Kick off the synchronized time ticker
-  _startCountdownTicker();
-}
+      // Engage the headless device lock restrictions
+      await ZoAppBlocker.instance.blockApps(_appsToLockdown);
+    } catch (e) {
+      debugPrint("Native App Blocker Service failed to initialize: $e");
+      // Handle gracefully (e.g., show a quick snackbar to the user)
+    }
+
+    // 5. Kick off the synchronized time ticker
+    _startCountdownTicker();
+  }
 
   void _startCountdownTicker() {
     _timer?.cancel();
     _endTime = DateTime.now().add(Duration(seconds: _secondsLeft));
 
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       final remaining = _endTime!.difference(DateTime.now()).inSeconds;
 
       if (remaining > 0) {
         setState(() {
           _secondsLeft = remaining;
         });
+        await FocusNotificationService.showRunningNotification(
+          secondsLeft: _secondsLeft,
+          paused: false,
+        );
       } else {
         _timer?.cancel();
         _handleTimerCompletion();
@@ -156,6 +182,10 @@ void _startFocusSession() async {
       setState(() {
         _currentState = FocusState.paused;
       });
+      await FocusNotificationService.showRunningNotification(
+        secondsLeft: _secondsLeft,
+        paused: true,
+      );
     } else if (_currentState == FocusState.paused) {
       await _soundService.resumeSound();
       // Re-engage native engine blocks
@@ -164,14 +194,27 @@ void _startFocusSession() async {
       setState(() {
         _currentState = FocusState.working;
       });
+      await FocusNotificationService.showRunningNotification(
+        secondsLeft: _secondsLeft,
+        paused: false,
+      );
       _startCountdownTicker();
     }
   }
 
   void _handleTimerCompletion() async {
     await _soundService.stopSound();
+    await _soundService.playCompletionSound();
+    await NotificationService.showTimerFinishedNotification();
+    await FocusForegroundService.stop();
+    await FocusNotificationService.stopNotification();
     // Lift native blocks completely before transitioning views
     await ZoAppBlocker.instance.unblockAll();
+    await NotificationService.showNotification(
+      id: 1001,
+      title: "Focus Session Complete!",
+      body: "Great job! Time for a short break.",
+    );
 
     if (_currentState == FocusState.working) {
       int minutesEarned = _totalSeconds ~/ 60;
@@ -214,8 +257,14 @@ void _startFocusSession() async {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            onPressed: () async {
+              await _soundService.stopCompletionSound();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("OK"),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -223,6 +272,9 @@ void _startFocusSession() async {
               Navigator.pop(context);
               _timer?.cancel();
               await _soundService.stopSound();
+              await _soundService.stopCompletionSound();
+              await FocusForegroundService.stop();
+              await FocusNotificationService.stopNotification();
 
               // Lift constraints cleanly on structural drop metrics
               await ZoAppBlocker.instance.unblockAll();
@@ -246,7 +298,16 @@ void _startFocusSession() async {
                   navigator.pop();
                 }
               }
-              _resetSessionState();
+              await FocusForegroundService.stop();
+              await FocusNotificationService.stopNotification();
+
+              _timer?.cancel();
+              _timer = null;
+
+              setState(() {
+                _currentState = FocusState.idle;
+                _secondsLeft = _totalSeconds;
+              });
             },
             child: const Text("Quit", style: TextStyle(color: Colors.white)),
           ),
@@ -263,7 +324,13 @@ void _startFocusSession() async {
         content: Text(body),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              await _soundService.stopCompletionSound();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text("OK"),
           ),
         ],

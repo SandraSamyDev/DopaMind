@@ -25,11 +25,7 @@ class HomeHeader extends StatelessWidget {
               "DopaMind",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
             ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.notifications_none),
-              onPressed: () {},
-            ),
+          
           ],
         ),
         const SizedBox(height: 20),
