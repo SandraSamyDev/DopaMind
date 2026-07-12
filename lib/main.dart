@@ -7,18 +7,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
 import 'package:zo_app_blocker/zo_app_blocker.dart';
+import 'package:dopamind/services/notification_service.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'services/focus_foreground_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
   await Firebase.initializeApp();
+  FocusForegroundService.init();
 
   // await FirebaseAppCheck.instance.activate(
   //  providerAndroid: kDebugMode
   //       ? const AndroidDebugProvider()
   //       : const AndroidPlayIntegrityProvider(),
   // );
-  await ZoAppBlocker.instance.initialize(blockScreenCallback: onBlockScreenRequested);
-
+  await ZoAppBlocker.instance.initialize(
+    blockScreenCallback: onBlockScreenRequested,
+  );
+  await NotificationService.initialize();
+  await NotificationService.requestPermission();
 
   runApp(
     MultiProvider(
@@ -48,15 +56,14 @@ void onBlockScreenRequested() {
               const SizedBox(height: 48),
               // Dismiss button
               ElevatedButton(
-                onPressed: ()async{
+                onPressed: () async {
                   context.onDismiss();
-
                 },
                 child: const Text('Exit'),
               ),
               const SizedBox(height: 16),
+
               // Unlock button for the current session
-              
             ],
           ),
         ),

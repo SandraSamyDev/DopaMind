@@ -23,7 +23,7 @@ class _FocusSoundSelectorState extends State<FocusSoundSelector> {
 
   @override
   void dispose() {
-    soundService.stopSound();
+    //soundService.stopSound();
     super.dispose();
   }
 

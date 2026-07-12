@@ -30,7 +30,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
   String? selectedFocusSoundId;
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
-  int selectedDurationTime = 25;
+  int selectedDurationTime = 0;
 
   List<Map<String, dynamic>> subtasks = [];
   bool isGeneratingAI = false;
@@ -47,7 +47,9 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
     selectedFocusSoundId = widget.task.focusSoundId;
     selectedDate = widget.task.dueDate;
     selectedTime = widget.task.reminder;
-    selectedDurationTime = widget.task.durationMinutes;
+    selectedDurationTime = widget.task.durationMinutes > 0
+        ? widget.task.durationMinutes
+        : 0;
     subtasks = List<Map<String, dynamic>>.from(
       widget.task.subtasks.map((item) => Map<String, dynamic>.from(item)),
     );
@@ -100,7 +102,7 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
       dueDate: selectedDate ?? DateTime.now(),
       reminder: selectedTime ?? TimeOfDay.now(),
       subtasks: subtasks,
-      durationMinutes: widget.task.durationMinutes,
+      durationMinutes: selectedDurationTime,
       isCompleted: taskCompleted,
       completedAt: widget.task.completedAt,
       actualTimeSpentMinutes: widget.task.actualTimeSpentMinutes,
@@ -115,10 +117,10 @@ class _TaskEditorScreenState extends State<TaskEditorScreen> {
         context,
       ).showSnackBar(const SnackBar(content: Text("Task saved")));
       Navigator.pop(context, updatedTask);
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+    } catch (e, s) {
+      print("SAVE ERROR:");
+      print(e);
+      print(s);
     }
   }
 

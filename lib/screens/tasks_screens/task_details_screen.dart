@@ -57,6 +57,43 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         scrolledUnderElevation: 0,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.dark),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Delete Task"),
+                  content: const Text(
+                    "Are you sure you want to delete this task?",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Cancel"),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text(
+                        "Delete",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+
+              await context.read<TaskProvider>().deleteTask(task.id);
+
+              if (!mounted) return;
+
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -227,7 +264,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => FocusScreen(task: task),
+                          builder: (_) => FocusScreen(
+                            task: task.copyWith(
+                              durationMinutes: task.durationMinutes == 0
+                                  ? 45
+                                  : task.durationMinutes,
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -257,8 +300,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               final updatedTask = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      TaskEditorScreen(task: task),
+                                  builder: (_) => TaskEditorScreen(task: task),
                                 ),
                               );
 
@@ -266,6 +308,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 setState(() {
                                   task = updatedTask;
                                 });
+
+                                await context.read<TaskProvider>().updateTask(
+                                  updatedTask,
+                                );
                               }
                             },
                             child: const Row(
